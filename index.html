@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 課堂分組互動遊戲大廳 - 掃碼即玩平台</title>
+    <link rel="stylesheet" href="./css/classroom.css">
+    <script src="./js/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --secondary: #ec4899;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-yellow: #f59e0b;
+            --accent-green: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.18) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 24px 16px 60px;
+        }
+
+        .header {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto 30px;
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: #a5b4fc;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .header h1 {
+            font-size: 2.4rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            line-height: 1.5;
+        }
+
+        /* 篩選標籤列 */
+        .filter-bar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .filter-btn {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: rgba(51, 65, 85, 0.8);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary-light);
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+        }
+
+        /* 遊戲卡片網格 */
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 22px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 16px 35px rgba(0, 0, 0, 0.4);
+        }
+
+        .game-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .game-icon-box {
+            width: 54px;
+            height: 54px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .game-meta h3 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .game-tag {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .tag-battle { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .tag-board { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .tag-speed { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .tag-puzzle { background: rgba(14, 165, 233, 0.2); color: #38bdf8; }
+
+        .game-desc {
+            color: var(--text-muted);
+            font-size: 13.5px;
+            line-height: 1.5;
+            margin-bottom: 18px;
+            flex: 1;
+        }
+
+        .game-features {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .feature-pill {
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #cbd5e1;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-qr {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-qr:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #fff;
+        }
+
+        .btn-play {
+            flex: 1.2;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: #ffffff;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+            transition: all 0.2s;
+        }
+        .btn-play:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.5);
+            color: white;
+        }
+
+        /* 課堂說明區塊 */
+        .guide-section {
+            max-width: 900px;
+            margin: 50px auto 0;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 26px 30px;
+        }
+
+        .guide-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #f1f5f9;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .guide-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .guide-step {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 14px 16px;
+            border-left: 3px solid var(--primary-light);
+        }
+
+        .guide-step h4 {
+            font-size: 14px;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .guide-step p {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* 投影用超大 QR Code 彈跳視窗 */
+        .projector-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(8px);
+            z-index: 999999;
+            align-items: center;
+            justify-content: center;
+            animation: projFade 0.2s ease forwards;
+        }
+
+        @keyframes projFade { from { opacity: 0; } to { opacity: 1; } }
+
+        .projector-card {
+            background: #ffffff;
+            color: #1e293b;
+            border-radius: 28px;
+            padding: 30px 36px;
+            max-width: 520px;
+            width: 92%;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+        }
+
+        .projector-close {
+            position: absolute;
+            top: 18px;
+            right: 22px;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 22px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+        .projector-close:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .projector-game-title {
+            font-size: 24px;
+            font-weight: 900;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .projector-subtitle {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 16px;
+        }
+
+        .projector-group-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 18px;
+        }
+
+        .proj-chip {
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 800;
+            border-radius: 20px;
+            border: 1.5px solid #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .proj-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .proj-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.35);
+        }
+
+        .projector-qr-wrapper {
+            background: #f8fafc;
+            padding: 18px;
+            border-radius: 20px;
+            border: 2px dashed #cbd5e1;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 14px;
+            min-width: 250px;
+            min-height: 250px;
+        }
+
+        .projector-url-text {
+            font-size: 12px;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 8px;
+            word-break: break-all;
+            margin-bottom: 12px;
+        }
+
+        .projector-btn-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-proj-action {
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-copy-url {
+            background: #e2e8f0;
+            color: #334155;
+        }
+        .btn-copy-url:hover {
+            background: #cbd5e1;
+        }
+        .btn-direct-jump {
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-direct-jump:hover {
+            background: var(--primary-light);
+        }
+
+        @media (max-width: 640px) {
+            .header h1 { font-size: 1.8rem; }
+            .games-grid { grid-template-columns: 1fr; }
+            .projector-card { padding: 22px 18px; }
+            .projector-qr-wrapper { min-width: 200px; min-height: 200px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a class="btn-play" href="./teacher.html" style="width:max-content;margin:0 auto 20px">⚙️ 教師後台</a><div class="header-badge">🏫 國小英語課堂分組遊戲平台</div>
+        <h1>🎮 互動教學遊戲大廳</h1>
+        <p>在大螢幕點擊「📱 投影 QR Code」供學生平板掃碼；各組掃碼後自動帶入組別名稱，免上傳即刻開戰！</p>
+    </div>
+
+    <!-- 篩選列 -->
+    <nav class="filter-bar" aria-label="依遊戲人數篩選"><button class="filter-btn active" data-filter="all" aria-pressed="true" onclick="filterGames('all')">全部遊戲 (8)</button><button class="filter-btn " data-filter="solo" aria-pressed="false" onclick="filterGames('solo')">一人遊戲 (3)</button><button class="filter-btn " data-filter="dual" aria-pressed="false" onclick="filterGames('dual')">雙人遊戲 (5)</button><button class="filter-btn " data-filter="multi" aria-pressed="false" onclick="filterGames('multi')">多人／分組遊戲 (6)</button></nav>
+
+    <!-- 遊戲卡片列表 -->
+    <div class="games-grid" id="gamesGrid"></div>
+
+    <!-- 課堂投影 QR Code 彈跳視窗 -->
+    <div class="projector-modal-overlay" id="projectorModal">
+        <div class="projector-card">
+            <button class="projector-close" onclick="closeProjectorModal()">&times;</button>
+            <h2 class="projector-game-title" id="projGameTitle">遊戲名稱</h2>
+            <div class="projector-subtitle">點選下方組別切換專屬條碼，請學生拿平板開啟相機掃描</div>
+
+            <div class="projector-group-bar" id="projGroupBar">
+                <button class="proj-chip active" data-group="" data-team="">🌐 全班通用</button>
+                <button class="proj-chip" data-group="1">🎯 第 1 組</button>
+                <button class="proj-chip" data-group="2">🎯 第 2 組</button>
+                <button class="proj-chip" data-group="3">🎯 第 3 組</button>
+                <button class="proj-chip" data-group="4">🎯 第 4 組</button>
+                <button class="proj-chip" data-group="5">🎯 第 5 組</button>
+                <button class="proj-chip" data-group="6">🎯 第 6 組</button>
+                <button class="proj-chip" data-team="blue">🔵 藍隊</button>
+                <button class="proj-chip" data-team="red">🔴 紅隊</button>
+            </div>
+
+            <!-- 本機模式提示與 GitHub 網址自訂欄位 -->
+            <div id="localFileNotice" style="display: none; background: #fff1f2; border: 1.5px solid #fecdd3; border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; text-align: left; font-size: 13px; color: #9f1239; line-height: 1.5;">
+                <div style="font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                    <span>💡</span> 為什麼手機掃描會顯示「找不到可用的資料」？
+                </div>
+                您目前在個人電腦以<b>「本機檔案 (file://)」</b>開啟，手機鏡頭無法直接連線存取您電腦內的 C 槽檔案，所以手機會判定不是網址。<br>
+                👉 <b>解決方式：</b>發布至 <b>GitHub Pages</b> 後網址會變成 <code>https://...</code>，手機一掃即可秒開！<br>
+                <div style="margin-top: 8px; display: flex; gap: 6px;">
+                    <input type="text" id="customBaseUrlInput" placeholder="輸入您的 GitHub 網址 (例: https://myname.github.io/mygame)" style="flex: 1; padding: 7px 10px; border-radius: 8px; border: 1.5px solid #fda4af; font-size: 12px;">
+                    <button onclick="saveCustomBaseUrl()" style="background: #e11d48; color: white; border: none; padding: 7px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">套用產生條碼</button>
+                </div>
+            </div>
+
+            <div class="projector-qr-wrapper" id="projQrBox"></div>
+            <div class="projector-url-text" id="projUrlText">網址載入中...</div>
+
+            <div class="projector-btn-row">
+                <button class="btn-proj-action btn-copy-url" onclick="copyProjectorUrl()">📋 複製連結</button>
+                <a class="btn-proj-action btn-direct-jump" id="projDirectLink" target="_blank" href="#">🚀 本機直接遊玩</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 老師使用說明指南 -->
+    <div class="guide-section">
+        <div class="guide-title">
+            <span>💡</span> 課堂投影與學生平板遊玩指南
+        </div>
+        <div class="guide-steps">
+            <div class="guide-step">
+                <h4>1. 投影大螢幕 QR Code</h4>
+                <p>老師在觸控黑板或投影電腦打開本大廳，點選想要進行的遊戲「📱 投影 QR Code」。</p>
+            </div>
+            <div class="guide-step">
+                <h4>2. 分組或通用掃碼</h4>
+                <p>若需區分組別，點選「第 1~6 組」或「藍紅隊」，QR Code 即刻變換，學生掃描後螢幕自動標註隊名！</p>
+            </div>
+            <div class="guide-step">
+                <h4>3. 免安裝即開即玩</h4>
+                <p>先到教師後台準備教材，再開啟遊戲。自訂設定存於本機瀏覽器，學生掃碼使用內建題庫。</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GAMES_DATA = [
+            {
+                id: "tug-of-war",
+                players: ["dual","multi"],
+                title: "拼字拔河大賽",
+                category: "battle",
+                tag: "雙人/分組對抗",
+                tagClass: "tag-battle",
+                icon: "🪢",
+                iconBg: "linear-gradient(135deg, #0984e3, #6c5ce7)",
+                desc: "藍紅雙方搶拼單字拔河！內建動物、食物、顏色與 Phonics 字母拼讀多單元題庫，答對繩索拉向己方！",
+                features: ["藍紅雙隊對決", "4大內建單元", "母音/首尾音挖空", "WebAudio音效"],
+                url: "./games/tug-of-war.html"
+            },
+            {
+                id: "castle-defense",
+                players: ["dual","multi"],
+                title: "單字城堡防衛戰",
+                category: "battle",
+                tag: "雙人/分組攻防",
+                tagClass: "tag-battle",
+                icon: "🏰",
+                iconBg: "linear-gradient(135deg, #00b894, #00cec9)",
+                desc: "RPG奇幻沙盤城堡對決！雙方士兵答對單字即向前推進，遭遇中心點觸發緊張刺激的限時剪刀石頭布對決！",
+                features: ["沙盤推進路徑", "遭遇戰猜拳", "立體石頭節點", "支援自訂題庫"],
+                url: "./games/castle-defense.html"
+            },
+            {
+                id: "quiz-battle",
+                players: ["dual","multi"],
+                title: "選擇題搶答拔河賽",
+                category: "battle",
+                tag: "即時搶答對抗",
+                tagClass: "tag-battle",
+                icon: "⚡",
+                iconBg: "linear-gradient(135deg, #e17055, #d63031)",
+                desc: "中央大型題目電視看板！內建日常英語、實用文法、生活字彙三套題庫，兩隊同時看題搶答，考驗反應與速度！",
+                features: ["免上傳即掃即玩", "內建3套題庫", "四選一搶答", "愛心生命值機制"],
+                url: "./games/quiz-battle.html"
+            },
+            {
+                id: "kick-it-out",
+                players: ["dual","multi"],
+                title: "Kick it Out! 英語大逃殺",
+                category: "board",
+                tag: "2~4人棋盤桌遊",
+                tagClass: "tag-board",
+                icon: "🎲",
+                iconBg: "linear-gradient(135deg, #fd79a8, #e84393)",
+                desc: "5x5 環形棋盤大逃殺！擲骰子移動花片，同格觸發全組問答，答對即可將敵方棋子一腳踢出棋盤！",
+                features: ["支援2~4位玩家", "句型互動彈窗", "iPad觸控防誤觸", "結算計分榜"],
+                url: "./games/kick-it-out.html"
+            },
+            {
+                id: "snakes-and-ladders",
+                players: ["solo","dual","multi"],
+                title: "蛇梯棋單字大冒險",
+                category: "board",
+                tag: "經典派對冒險",
+                tagClass: "tag-board",
+                icon: "🐍",
+                iconBg: "linear-gradient(135deg, #55efc4, #00b894)",
+                desc: "超可愛經典蛇梯棋！踩中梯子向上攀升，踩中蛇頭滑落深淵！每格附帶單字拼寫與真人語音發音朗讀。",
+                features: ["1~4人同樂", "語音合成朗讀", "自訂單字清單", "跳躍動畫效果"],
+                url: "./games/snakes-and-ladders.html"
+            },
+{
+                id: "whack-a-mole",
+                players: ["solo"],
+                title: "單字打地鼠",
+                category: "speed",
+                tag: "速度與專注力",
+                tagClass: "tag-speed",
+                icon: "🐹",
+                iconBg: "linear-gradient(135deg, #a29bfe, #6c5ce7)",
+                desc: "看準目標單字，迅速揮槌打地鼠！低年級適合慢速認字、高年級開啟極速挑戰，支援答錯扣分懲罰機制。",
+                features: ["可調探頭秒數", "高低年級通用", "得分獲勝目標", "即時音效合成"],
+                url: "./games/whack-a-mole.html"
+            },
+            {
+                id: "slot-machine",
+                players: ["solo"],
+                title: "單字拉霸機",
+                category: "speed",
+                tag: "字母拉霸對齊",
+                tagClass: "tag-speed",
+                icon: "🎰",
+                iconBg: "linear-gradient(135deg, #f39c12, #e67e22)",
+                desc: "拉斯維加斯風格三滾輪拉霸機！低年級友善慢速旋轉，考驗學生手眼協調，精準煞車停出目標單字！",
+                features: ["獨立三輪煞車", "6種速度難度", "倒數計時挑戰", "低年級超推薦"],
+                url: "./games/slot-machine.html"
+            },
+            {
+                id: "tap-and-guess",
+                players: ["multi"],
+                title: "Tap & Guess 點擊猜字",
+                category: "speed",
+                tag: "神秘方塊大猜謎",
+                tagClass: "tag-speed",
+                icon: "🔍",
+                iconBg: "linear-gradient(135deg, #ff7675, #d63031)",
+                desc: "學生閉上眼睛！老師或組長隨機藏好神秘目標單字，全班依序翻開卡片，猜猜看誰能在最少次數內找出正解！",
+                features: ["隨機隱藏目標", "自訂提問標題", "翻牌回饋特效", "課堂暖身首選"],
+                url: "./games/tap-and-guess.html"
+            }
+        ];
+
+        let activeGame = null;
+        let selectedGroup = "";
+        let selectedTeam = "";
+
+        function renderGames(list) {
+            const grid = document.getElementById('gamesGrid');
+            grid.innerHTML = '';
+
+            list.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.innerHTML = `
+                    <div>
+                        <div class="game-top">
+                            <div class="game-icon-box" style="background: ${game.iconBg}">${game.icon}</div>
+                            <div class="game-meta">
+                                <h3>${game.title}</h3>
+                                <span class="game-tag ${game.tagClass}">${game.tag}</span><span class="game-tag tag-puzzle">${game.players.map(p => ({solo:"1 人",dual:"2 人",multi:"多人／分組"})[p]).join("・")}</span>
+                            </div>
+                        </div>
+                        <p class="game-desc">${game.desc}</p>
+                        <div class="game-features">
+                            ${game.features.map(f => `<span class="feature-pill">✓ ${f}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-qr" onclick="openProjectorModal('${game.id}')">📱 投影 QR</button>
+                        <a class="btn-play" href="${game.url}">🎮 開始遊玩</a>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterGames(category) {
+            document.querySelectorAll('.filter-btn').forEach(button => {
+                const selected = button.dataset.filter === category;
+                button.classList.toggle('active', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            });
+            renderGames(category === 'all' ? GAMES_DATA : GAMES_DATA.filter(g => g.players.includes(category)));
+        }
+
+        function getFullGameUrl(gamePath, group, team) {
+            const loc = window.location;
+            let baseUrl = localStorage.getItem('custom_online_base_url');
+            if (!baseUrl && loc.protocol === 'file:') {
+                baseUrl = 'https://chialinghu-lgtm.github.io/HELLO-GAME';
+            }
+            let fullUrl;
+            
+            if (baseUrl && baseUrl.trim().startsWith('http')) {
+                baseUrl = baseUrl.trim().replace(/\/+$/, '');
+                const cleanGamePath = gamePath.replace(/^\.\//, '');
+                fullUrl = new URL(cleanGamePath, baseUrl + '/');
+            } else {
+                fullUrl = new URL(gamePath, loc.href);
+            }
+            
+            if (group) fullUrl.searchParams.set('group', group);
+            if (team) fullUrl.searchParams.set('team', team);
+            return fullUrl.toString();
+        }
+
+        function saveCustomBaseUrl() {
+            const input = document.getElementById('customBaseUrlInput');
+            if (!input) return;
+            const val = input.value.trim();
+            if (val) {
+                localStorage.setItem('custom_online_base_url', val);
+                alert("🎉 已成功設定線上網址！\nQR Code 已更新，手機掃描即可打開！");
+            } else {
+                localStorage.removeItem('custom_online_base_url');
+                alert("已清除自訂網址，恢復預設模式。");
+            }
+            updateProjectorQR();
+        }
+
+        function openProjectorModal(gameId) {
+            activeGame = GAMES_DATA.find(g => g.id === gameId);
+            if (!activeGame) return;
+
+            document.getElementById('projGameTitle').innerText = `${activeGame.icon} ${activeGame.title}`;
+            selectedGroup = "";
+            selectedTeam = "";
+
+            const isFileProtocol = window.location.protocol === 'file:';
+            const notice = document.getElementById('localFileNotice');
+            const customInput = document.getElementById('customBaseUrlInput');
+            const savedUrl = localStorage.getItem('custom_online_base_url') || (isFileProtocol ? 'https://chialinghu-lgtm.github.io/HELLO-GAME' : '');
+            
+            if (customInput) customInput.value = savedUrl;
+            if (notice) {
+                notice.style.display = isFileProtocol ? 'block' : 'none';
+            }
+
+            const chips = document.querySelectorAll('.proj-chip');
+            chips.forEach((c, idx) => {
+                if (idx === 0) c.classList.add('active');
+                else c.classList.remove('active');
+            });
+
+            updateProjectorQR();
+            document.getElementById('projectorModal').style.display = 'flex';
+        }
+
+        function closeProjectorModal() {
+            document.getElementById('projectorModal').style.display = 'none';
+        }
+
+        function updateProjectorQR() {
+            if (!activeGame) return;
+            const targetUrl = getFullGameUrl(activeGame.url, selectedGroup, selectedTeam);
+
+            const qrBox = document.getElementById('projQrBox');
+            const urlText = document.getElementById('projUrlText');
+            const directLink = document.getElementById('projDirectLink');
+
+            qrBox.innerHTML = '';
+            urlText.innerText = targetUrl;
+            directLink.href = targetUrl;
+
+            if (window.QRCode) {
+                new window.QRCode(qrBox, {
+                    text: targetUrl,
+                    width: 230,
+                    height: 230,
+                    colorDark: '#0f172a',
+                    colorLight: '#ffffff',
+                    correctLevel: window.QRCode.CorrectLevel.M
+                });
+            } else {
+                qrBox.innerHTML = '<p style="color:#64748b;">條碼模組載入中...</p>';
+            }
+        }
+
+        // 綁定組別切換晶片
+        document.querySelectorAll('.proj-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.proj-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+
+                selectedGroup = chip.getAttribute('data-group') || '';
+                selectedTeam = chip.getAttribute('data-team') || '';
+                updateProjectorQR();
+            });
+        });
+
+        function copyProjectorUrl() {
+            const url = document.getElementById('projUrlText').innerText;
+            navigator.clipboard.writeText(url).then(() => {
+                alert("已成功複製遊戲網址到剪貼簿！\n" + url);
+            }).catch(() => {
+                alert("遊戲網址：\n" + url);
+            });
+        }
+
+        // 點擊遮罩關閉
+        document.getElementById('projectorModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('projectorModal')) {
+                closeProjectorModal();
+            }
+        });
+
+        // 初始渲染所有遊戲
+        renderGames(GAMES_DATA);
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+<!doctype html><html lang="zh-TW"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>教師後台｜英語遊戲</title><style>
+*{box-sizing:border-box}body{margin:0;background:#0f172a;color:#f1f5f9;font-family:system-ui,sans-serif}header{max-width:1200px;margin:auto;padding:28px 24px 18px}a{color:#a5b4fc}h1{margin:18px 0 8px}p{color:#b5c2d6;line-height:1.7}main{max-width:1200px;margin:auto;padding:0 24px 24px}select{padding:12px;border-radius:10px;background:#1e293b;color:white;max-width:100%;font:inherit;border:1px solid #64748b}iframe{display:block;width:100%;height:70vh;min-height:540px;border:1px solid #475569;border-radius:16px;margin-top:16px;background:#fff}.notice{padding:12px 16px;background:#1e293b;border-radius:12px;font-size:14px}
+</style><header><a href="index.html">← 回遊戲大廳</a><h1>教師後台</h1><p>準備教材、調整難度，再開啟遊戲。遊戲畫面不再堆疊題庫工具。</p><p class="notice">設定僅儲存在這台裝置的此瀏覽器。此頁是教材設定入口，未設登入權限。學生掃碼不會自動取得老師的自訂教材。</p></header><main><label for="game">選擇要設定的遊戲：</label> <select id="game"><option value="tug-of-war">拼字拔河大賽</option><option value="castle-defense">單字城堡防衛戰</option><option value="quiz-battle">選擇題搶答拔河賽</option><option value="kick-it-out">Kick it Out! 英語大逃殺</option><option value="snakes-and-ladders">蛇梯棋單字大冒險</option><option value="whack-a-mole">單字打地鼠</option><option value="slot-machine">單字拉霸機</option><option value="tap-and-guess">Tap & Guess 點擊猜字</option></select><iframe id="editor" title="遊戲教材與設定"></iframe></main><script>
+const select=document.getElementById('game'), frame=document.getElementById('editor');
+const requested=new URLSearchParams(location.search).get('game');
+if([...select.options].some(o=>o.value===requested))select.value=requested;
+function load(){frame.src='games/'+select.value+'.html?teacher=1';history.replaceState(null,'','?game='+select.value)}
+select.addEventListener('change',load);load();
+</script></html>
