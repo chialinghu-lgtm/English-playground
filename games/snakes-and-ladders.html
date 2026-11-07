@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🐍 蛇梯棋單字大冒險 🪜</title>
+  <link rel="stylesheet" href="../css/classroom.css">
+  <script src="../js/qrcode.min.js"></script>
+  <script src="../js/classroom-bar.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap');
+
+    :root {
+      --bg: #FFF9E6;
+      --card-bg: #FFFFFF;
+      --primary: #FF70A6;
+      --accent: #FF9770;
+      --yellow: #FFD670;
+      --teal: #70D6FF;
+      --green: #80E3A7;
+      --track-border: #634832;
+    }
+
+    * { box-sizing: border-box; user-select: none; }
+
+    body {
+      font-family: 'Fredoka One', 'M PLUS Rounded 1c', sans-serif;
+      background-color: var(--bg);
+      color: #4A4A4A;
+      margin: 0;
+      padding: 50px 14px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .main-box { width: 100%; max-width: 860px; }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 16px 20px;
+      box-shadow: 0 8px 0 #EAD7AF, 0 10px 16px rgba(0,0,0,0.06);
+      border: 3px solid var(--track-border);
+    }
+
+    h1, h2, h3 { text-align: center; color: #FF5A84; margin: 0 0 10px 0; }
+
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 14px; margin-bottom: 4px; color: #634832; font-weight: bold; }
+    input[type="text"], input[type="number"], textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 2px solid #EAD7AF;
+      border-radius: 12px;
+      font-size: 14px;
+      background: #FFFDF9;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .cute-btn {
+      background-color: var(--primary);
+      color: white;
+      border: 2.5px solid var(--track-border);
+      border-radius: 14px;
+      padding: 8px 18px;
+      font-size: 15px;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #D93B72;
+      transition: transform 0.1s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cute-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #D93B72; }
+    .cute-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #D93B72; }
+    .cute-btn:disabled { background-color: #D3D3D3; border-color: #A9A9A9; box-shadow: 0 3px 0 #8E8E8E; cursor: not-allowed; transform: none; }
+
+    .dashboard {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #FFF1DB;
+      border: 2.5px dashed #E6C280;
+      border-radius: 16px;
+      padding: 8px 16px;
+      margin-bottom: 12px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .dice-area { display: flex; align-items: center; gap: 10px; }
+    .dice-cube {
+      width: 44px; height: 44px;
+      background: white;
+      border: 2.5px solid var(--track-border);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 0 #D8C3A5;
+    }
+    .dice-rolling { animation: shake 0.3s infinite; }
+    @keyframes shake {
+      0% { transform: rotate(0deg) scale(1.1); }
+      50% { transform: rotate(-15deg) scale(1.1); }
+      100% { transform: rotate(15deg) scale(1.1); }
+    }
+
+    .snake-board {
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 10px;
+      padding: 6px 14px;
+      position: relative;
+    }
+
+    .track-row {
+      display: flex;
+      align-items: center;
+      position: relative;
+      gap: 8px;
+      width: 100%;
+    }
+    .track-row.rtl { flex-direction: row-reverse; }
+
+    .turn-connector {
+      position: absolute;
+      width: 22px;
+      height: calc(100% + 12px);
+      border: 5px dashed #E6C280;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .turn-connector.right { right: -16px; top: -7px; border-left: none; border-radius: 0 20px 20px 0; }
+    .turn-connector.left { left: -16px; top: -7px; border-right: none; border-radius: 20px 0 0 24px; }
+
+    .tile {
+      width: calc((100% - 32px) / 5);
+      flex: 0 0 calc((100% - 32px) / 5);
+      height: clamp(60px, 9.2vh, 74px);
+      background: white;
+      border: 2.5px solid var(--track-border);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px;
+      box-shadow: 0 4px 0 #E2CDAA;
+      position: relative;
+      z-index: 2;
+    }
+
+    .tile-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #A08C75;
+      font-weight: bold;
+    }
+
+    .tile-text {
+      font-size: 12px;
+      font-weight: 800;
+      text-align: center;
+      line-height: 1.15;
+      word-break: break-word;
+    }
+
+    .tile.ladder-tile { background: #D0F4DE; border-color: #2ECC71; }
+    .tile.snake-tile { background: #FFD3B6; border-color: #E74C3C; }
+    .tile.start-tile { background: var(--green); }
+    .tile.finish-tile { background: var(--primary); color: white; }
+
+    .token-slot { display: flex; gap: 2px; min-height: 18px; align-items: center; justify-content: center; }
+    .player-token { font-size: 16px; transition: transform 0.2s; }
+    .player-token.jumping { transform: translateY(-12px) scale(1.3); }
+
+    /* 通用彈窗背景 */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(80, 50, 20, 0.45);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .cute-modal {
+      background: white;
+      border: 3.5px solid var(--track-border);
+      border-radius: 22px;
+      padding: 20px;
+      text-align: center;
+      max-width: 320px;
+      width: 88%;
+      box-shadow: 0 8px 0 #EAD7AF;
+    }
+    .quiz-title { font-size: 16px; color: #634832; margin-bottom: 6px; }
+    .quiz-display {
+      font-size: 26px;
+      color: var(--primary);
+      margin: 10px 0;
+      padding: 6px;
+      background: #FFF1F5;
+      border-radius: 12px;
+      letter-spacing: 2px;
+      font-weight: bold;
+    }
+    .quiz-input {
+      font-size: 18px;
+      text-align: center;
+      text-transform: lowercase;
+      margin-bottom: 12px;
+    }
+
+    /* 獲勝彈窗專屬生動樣式 */
+    .win-modal {
+      background: #FFFDF9;
+      border: 4px solid var(--track-border);
+      border-radius: 28px;
+      padding: 30px 24px;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 12px 0 #EAD7AF, 0 20px 25px rgba(0,0,0,0.15);
+      animation: popBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popBounce {
+      0% { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .win-avatar-box {
+      font-size: 64px;
+      margin-bottom: 8px;
+      animation: floatTrophy 1.5s infinite alternate ease-in-out;
+    }
+
+    @keyframes floatTrophy {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-8px) scale(1.05); }
+    }
+
+    .win-title {
+      font-size: 28px;
+      color: #FF5A84;
+      margin: 6px 0;
+      text-shadow: 2px 2px 0 #FFE1EA;
+    }
+
+    .win-player-name {
+      font-size: 24px;
+      color: #634832;
+      background: #FFF1DB;
+      border: 2px dashed #E6C280;
+      border-radius: 16px;
+      padding: 10px 16px;
+      margin: 14px 0 20px 0;
+      font-weight: bold;
+    }
+  </style>
+<link rel="stylesheet" href="../css/game-layout.css">
+</head>
+<body>
+
+<div class="main-box">
+
+  <!-- 後台設定 -->
+  <div class="card" id="adminPanel">
+    <h1>🐍 蛇梯棋後台設定 🪜</h1>
+    <div class="form-group">
+      <label>👥 遊戲人數 (1 ~ 4 位)：</label>
+      <input type="number" id="playerCount" value="2" min="1" max="4">
+    </div>
+
+    <div class="form-group">
+      <label>📝 練習單字清單（以逗號分開）：</label>
+      <textarea id="wordList" rows="3">Apple, Banana, Cat, Dog, Elephant, Fish, Giraffe, Hat, Ice, Juice, Kite, Lemon, Monkey, Orange, Panda, Rabbit</textarea>
+    </div>
+
+    <div style="text-align: center; margin-top: 14px;">
+      <button class="cute-btn" onclick="initAndBuildGame()">🗺️ 產生蛇梯棋盤並開始！</button>
+    </div>
+  </div>
+
+  <!-- 遊戲前台 -->
+  <div class="card" id="gamePanel" style="display: none;">
+    <h2>🏁 蛇梯單字大冒險 🚩</h2>
+
+    <div class="dashboard">
+      <div style="font-size: 16px; font-weight: bold;">
+        <span>輪到：</span>
+        <span id="turnDisplay">🐱 小貓咪</span>
+      </div>
+
+      <div class="dice-area">
+        <div class="dice-cube" id="diceBox">🎲</div>
+        <button class="cute-btn" id="rollDiceBtn" onclick="onRollDice()">擲骰子 🎯</button>
+      </div>
+
+      <div style="display: flex; gap: 6px;">
+        <button class="cute-btn" style="background:var(--teal); box-shadow:0 4px 0 #3FA6D1; padding:6px 12px; font-size:12px;" onclick="restartGame()">🔄 再玩一次</button>
+        <button class="cute-btn" style="background:#B59E87; box-shadow:0 4px 0 #87715C; padding:6px 12px; font-size:12px;" onclick="backToAdmin()">⚙️ 重設題目</button>
+      </div>
+    </div>
+
+    <div class="snake-board" id="snakeBoard"></div>
+  </div>
+
+</div>
+
+<!-- 彈性測驗互動彈窗 -->
+<div class="modal-backdrop" id="quizModal">
+  <div class="cute-modal">
+    <div style="font-size: 30px;" id="modalIcon">🎯</div>
+    <div class="quiz-title" id="modalTitle">單字大挑戰</div>
+    <div class="quiz-display" id="modalWordDisplay">_ p p l e</div>
+    
+    <div id="spellingContainer" style="display:none;">
+      <input type="text" class="quiz-input" id="spellInput" placeholder="請輸入完整單字" autocomplete="off">
+    </div>
+
+    <div style="display:flex; gap:8px; justify-content:center; margin-top: 8px;">
+      <button class="cute-btn" style="background:var(--teal); box-shadow:0 4px 0 #3FA6D1;" onclick="speakTargetWord()">🔊 發音</button>
+      <button class="cute-btn" style="background:var(--green); box-shadow:0 4px 0 #57B67D;" onclick="validateQuizAnswer()">驗證答案 🌟</button>
+    </div>
+  </div>
+</div>
+
+<!-- 繽紛可愛的獲勝慶祝彈窗 -->
+<div class="modal-backdrop" id="winModal">
+  <div class="win-modal">
+    <div class="win-avatar-box" id="winAvatar">🏆</div>
+    <div class="win-title">🎉 恭喜獲勝！ 🎉</div>
+    <div class="win-player-name" id="winMessage">🐱 小貓咪 榮登冠軍！</div>
+    
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button class="cute-btn" style="font-size: 18px; padding: 12px 24px; background: var(--green); box-shadow: 0 5px 0 #57B67D;" onclick="restartFromWinModal()">
+        ✨ 再玩一次！
+      </button>
+      <button class="cute-btn" style="font-size: 15px; padding: 12px 18px; background: #B59E87; box-shadow: 0 5px 0 #87715C;" onclick="closeWinModal()">
+        關閉視窗
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const CHARACTERS = [
+    { name: '小貓咪', emoji: '🐱' },
+    { name: '小狗狗', emoji: '🐶' },
+    { name: '小兔子', emoji: '🐰' },
+    { name: '小狐狸', emoji: '🦊' }
+  ];
+  const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+  const TILES_PER_ROW = 5;
+
+  let players = [];
+  let currentTurn = 0;
+  let tiles = [];
+  let isMoving = false;
+  let preRollPosition = 0;
+
+  let currentQuiz = {
+    type: 'read',
+    answer: '',
+    mask: ''
+  };
+
+  function initAndBuildGame() {
+    const pCount = Math.min(4, Math.max(1, parseInt(document.getElementById('playerCount').value) || 2));
+    const rawWords = document.getElementById('wordList').value
+      .split(/[,\n]/)
+      .map(w => w.trim())
+      .filter(w => w.length > 0);
+
+    if (rawWords.length < 6) {
+      alert('請至少填寫 6 個單字！');
+      return;
+    }
+
+    players = Array(pCount).fill(0);
+    currentTurn = 0;
+
+    tiles = [{ type: 'start-tile', text: 'START', jumpTo: null }];
+
+    rawWords.forEach((word, idx) => {
+      if (idx === 2) {
+        tiles.push({ type: 'ladder-tile', text: '🪜 梯子衝刺', jumpTo: 9 });
+      } else if (idx === 7) {
+        tiles.push({ type: 'snake-tile', text: '🐍 踩到蛇！', jumpTo: 3 });
+      } else if (idx === 13) {
+        tiles.push({ type: 'ladder-tile', text: '🪜 直奔終點', jumpTo: 17 });
+      } else {
+        tiles.push({ type: 'word-tile', text: word, jumpTo: null });
+      }
+    });
+
+    tiles.push({ type: 'finish-tile', text: 'FINISH 🏆', jumpTo: null });
+
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('gamePanel').style.display = 'block';
+
+    renderSnakeBoard();
+    updatePlayerTurnUI();
+  }
+
+  function renderSnakeBoard() {
+    const container = document.getElementById('snakeBoard');
+    container.innerHTML = '';
+    const rowCount = Math.ceil(tiles.length / TILES_PER_ROW);
+
+    for (let r = 0; r < rowCount; r++) {
+      const isRTL = (r % 2 === 1);
+      const rowDiv = document.createElement('div');
+      rowDiv.className = `track-row ${isRTL ? 'rtl' : 'ltr'}`;
+
+      const startIdx = r * TILES_PER_ROW;
+      const endIdx = Math.min(startIdx + TILES_PER_ROW, tiles.length);
+
+      for (let i = startIdx; i < endIdx; i++) {
+        const tileData = tiles[i];
+        const tileEl = document.createElement('div');
+        tileEl.className = `tile ${tileData.type}`;
+        tileEl.id = `tile-${i}`;
+
+        let arrowSymbol = isRTL ? '⬅' : '➔';
+        if (i === tiles.length - 1) arrowSymbol = '⭐';
+        else if (i === endIdx - 1 && r < rowCount - 1) arrowSymbol = isRTL ? '⤴' : '⤵';
+
+        let jumpHint = '';
+        if (tileData.jumpTo !== null) {
+          jumpHint = `<span style="font-size:9px;">➜ #${tileData.jumpTo}</span>`;
+        }
+
+        tileEl.innerHTML = `
+          <div class="tile-header">
+            <span>#${i} ${jumpHint}</span>
+            <span>${arrowSymbol}</span>
+          </div>
+          <div class="tile-text">${tileData.text}</div>
+          <div class="token-slot" id="slot-${i}"></div>
+        `;
+        rowDiv.appendChild(tileEl);
+      }
+
+      if (r < rowCount - 1) {
+        const turnConnector = document.createElement('div');
+        turnConnector.className = `turn-connector ${isRTL ? 'left' : 'right'}`;
+        rowDiv.appendChild(turnConnector);
+      }
+
+      container.appendChild(rowDiv);
+    }
+
+    updateTokensDisplay();
+  }
+
+  function updateTokensDisplay() {
+    document.querySelectorAll('.token-slot').forEach(el => el.innerHTML = '');
+    players.forEach((pos, pIndex) => {
+      const slot = document.getElementById(`slot-${pos}`);
+      if (slot) {
+        const token = document.createElement('span');
+        token.className = 'player-token';
+        token.id = `player-token-${pIndex}`;
+        token.innerText = CHARACTERS[pIndex].emoji;
+        slot.appendChild(token);
+      }
+    });
+  }
+
+  function onRollDice() {
+    if (isMoving) return;
+    const rollBtn = document.getElementById('rollDiceBtn');
+    const diceBox = document.getElementById('diceBox');
+
+    rollBtn.disabled = true;
+    diceBox.classList.add('dice-rolling');
+
+    preRollPosition = players[currentTurn];
+
+    setTimeout(() => {
+      diceBox.classList.remove('dice-rolling');
+      const diceNum = Math.floor(Math.random() * 6) + 1;
+      diceBox.innerText = DICE_FACES[diceNum - 1];
+
+      stepByStepMove(diceNum);
+    }, 400);
+  }
+
+  function stepByStepMove(remainingSteps) {
+    isMoving = true;
+    const maxIndex = tiles.length - 1;
+
+    if (remainingSteps <= 0 || players[currentTurn] >= maxIndex) {
+      isMoving = false;
+      finalizeArrival();
+      return;
+    }
+
+    players[currentTurn] = Math.min(players[currentTurn] + 1, maxIndex);
+    updateTokensDisplay();
+
+    const tokenEl = document.getElementById(`player-token-${currentTurn}`);
+    if (tokenEl) tokenEl.classList.add('jumping');
+
+    setTimeout(() => {
+      if (tokenEl) tokenEl.classList.remove('jumping');
+      stepByStepMove(remainingSteps - 1);
+    }, 240);
+  }
+
+  // 結算與終點判定：改用可愛豐富的獲勝彈窗
+  function finalizeArrival() {
+    const currentPos = players[currentTurn];
+    const currentTile = tiles[currentPos];
+    const maxIndex = tiles.length - 1;
+
+    if (currentPos === maxIndex) {
+      const winner = CHARACTERS[currentTurn];
+      showWinModal(winner);
+      return;
+    }
+
+    // 踩到蛇或梯子
+    if (currentTile.jumpTo !== null) {
+      const isLadder = currentTile.type === 'ladder-tile';
+      alert(isLadder ? `🪜 爬到梯子！直接升到第 #${currentTile.jumpTo} 格！` : `😱 踩到大蛇滑落！退回第 #${currentTile.jumpTo} 格！`);
+      players[currentTurn] = currentTile.jumpTo;
+      updateTokensDisplay();
+      nextTurn();
+      return;
+    }
+
+    // 踩到單字格
+    if (currentTile.type === 'word-tile') {
+      openQuizModal(currentTile.text);
+      return;
+    }
+
+    nextTurn();
+  }
+
+  // 開啟可愛獲勝彈窗
+  function showWinModal(winner) {
+    document.getElementById('winAvatar').innerText = `${winner.emoji} 🏆`;
+    document.getElementById('winMessage').innerText = `${winner.name} 抵達終點獲勝！`;
+    document.getElementById('winModal').style.display = 'flex';
+    document.getElementById('rollDiceBtn').disabled = true;
+  }
+
+  function closeWinModal() {
+    document.getElementById('winModal').style.display = 'none';
+  }
+
+  function restartFromWinModal() {
+    closeWinModal();
+    restartGame();
+  }
+
+  function restartGame() {
+    players = players.map(() => 0);
+    currentTurn = 0;
+    isMoving = false;
+
+    document.getElementById('diceBox').innerText = '🎲';
+    document.getElementById('rollDiceBtn').disabled = false;
+
+    document.getElementById('quizModal').style.display = 'none';
+    document.getElementById('winModal').style.display = 'none';
+
+    updateTokensDisplay();
+    updatePlayerTurnUI();
+  }
+
+  function openQuizModal(word) {
+    currentQuiz.answer = word.trim().toLowerCase();
+    
+    const isCloze = Math.random() < 0.5 && word.length >= 3;
+    currentQuiz.type = isCloze ? 'cloze' : 'read';
+
+    const spellInput = document.getElementById('spellInput');
+    spellInput.value = '';
+
+    if (isCloze) {
+      document.getElementById('modalIcon').innerText = '✍️';
+      document.getElementById('modalTitle').innerText = '填空拼字題（輸入完整單字）';
+      
+      const hideIndex = Math.floor(Math.random() * word.length);
+      let masked = '';
+      for (let i = 0; i < word.length; i++) {
+        masked += (i === hideIndex) ? ' _ ' : word[i];
+      }
+      currentQuiz.mask = masked;
+      document.getElementById('modalWordDisplay').innerText = masked;
+      document.getElementById('spellingContainer').style.display = 'block';
+      spellInput.focus();
+    } else {
+      document.getElementById('modalIcon').innerText = '📢';
+      document.getElementById('modalTitle').innerText = '大聲朗讀關卡！';
+      document.getElementById('modalWordDisplay').innerText = word;
+      document.getElementById('spellingContainer').style.display = 'none';
+      speakTargetWord();
+    }
+
+    document.getElementById('quizModal').style.display = 'flex';
+  }
+
+  function validateQuizAnswer() {
+    if (currentQuiz.type === 'cloze') {
+      const userVal = document.getElementById('spellInput').value.trim().toLowerCase();
+      if (userVal === currentQuiz.answer) {
+        alert('✨ 答對了！順利站穩這一格！');
+        document.getElementById('quizModal').style.display = 'none';
+        nextTurn();
+      } else {
+        alert(`❌ 答錯囉！正確是 ${currentQuiz.answer}。退回原位！`);
+        document.getElementById('quizModal').style.display = 'none';
+        players[currentTurn] = preRollPosition;
+        updateTokensDisplay();
+        nextTurn();
+      }
+    } else {
+      document.getElementById('quizModal').style.display = 'none';
+      nextTurn();
+    }
+  }
+
+  function speakTargetWord() {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(currentQuiz.answer);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.85;
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+
+  function nextTurn() {
+    currentTurn = (currentTurn + 1) % players.length;
+    updatePlayerTurnUI();
+    document.getElementById('rollDiceBtn').disabled = false;
+  }
+
+  function updatePlayerTurnUI() {
+    const char = CHARACTERS[currentTurn];
+    document.getElementById('turnDisplay').innerText = `${char.emoji} ${char.name}`;
+  }
+
+  function backToAdmin() {
+    document.getElementById('gamePanel').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+  }
+</script>
+
+<script>
+window.gameTeacherConfig={"id":"snakes-and-ladders","selector":"#adminPanel"};</script><script src="../js/teacher-settings.js"></script></body>
+</html>

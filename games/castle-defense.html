@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>英文單字解密-城堡戰略攻防戰(立體石頭版)</title>
+    <link rel="stylesheet" href="../css/classroom.css">
+    <script src="../js/qrcode.min.js"></script>
+    <script src="../js/classroom-bar.js"></script>
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        
+        body { font-family: 'Arial', sans-serif; background-color: #2c3e50; margin: 0; padding: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* 頂部管理控制列 */
+        .admin-bar { display: flex; justify-content: center; align-items: center; gap: 1.5vw; background: #1a252f; padding: 0.5vh 0.5vh 0.5vh 170px; height: 6vh; border-bottom: 2px solid #34495e; }
+        .admin-btn { padding: 4px 15px; font-size: 14px; font-weight: bold; color: white; background: #34495e; border: none; border-radius: 4px; cursor: pointer; }
+        .admin-btn.start { background: #2ecc71; }
+        .admin-btn.config { background: #f1c40f; color: #2c3e50; }
+
+        /* 全螢幕主容器 */
+        .game-stage { display: flex; flex-direction: column; width: 100%; height: 94vh; min-width: 0; }
+
+        /* 上半部：RPG 奇幻綠地城堡地圖區 (佔比 45vh) */
+        .map-dashboard { background: #78e08f; background-image: radial-gradient(#78e08f 20%, #38a169 80%); border-bottom: 4px solid #1a252f; padding: 1.5vh 3vw; display: flex; flex-direction: column; height: 45vh; min-width: 0; position: relative; }
+        
+        .info-row { display: flex; justify-content: space-between; align-items: center; color: white; font-size: 2.2vh; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.6); z-index: 10; }
+        .timer-text { background: rgba(0,0,0,0.5); padding: 5px 20px; border-radius: 12px; color: #ff4757; font-size: 2.8vh; border: 2px solid #bdc3c7; }
+        .gem-span { font-size: 2.5vh; letter-spacing: 2px; }
+
+        /* RPG 地圖大沙盤場景 */
+        .battle-map { display: flex; justify-content: space-between; align-items: center; flex: 1; position: relative; margin-top: 1vh; padding: 0 1vw; }
+        
+        /* 完美還原 image_fe679c.png 底部粗體黃色行軍虛線路徑 */
+        .map-path-line { 
+            position: absolute; 
+            top: 50%; 
+            left: 10vw; 
+            right: 10vw; 
+            height: 10px; 
+            background-image: linear-gradient(to right, #ffeaa7 60%, transparent 40%);
+            background-size: 30px 100%; /* 控制虛線的長度與間隔 */
+            transform: translateY(-50%); 
+            z-index: 1; 
+            opacity: 0.9;
+        }
+        
+        /* 藍紅雙方大城堡 */
+        .castle { width: 15vh; height: 16vh; border-radius: 16px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 2vh; z-index: 2; box-shadow: 0 8px 20px rgba(0,0,0,0.4); position: relative; text-shadow: 2px 2px 4px black; border: 4px solid #ffffff; }
+        .castle-blue { background: #0088cc; box-shadow: 0 0 20px #0088cc, 0 8px 20px rgba(0,0,0,0.4); }
+        .castle-red { background: #ff4757; box-shadow: 0 0 20px #ff4757, 0 8px 20px rgba(0,0,0,0.4); }
+        .castle-title-lbl { background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 6px; font-size: 1.6vh; margin-bottom: 0.5vh; }
+        .castle-door-spot { width: 5.5vh; height: 5.5vh; background: rgba(0,0,0,0.3); border-radius: 50%; border: 2px dashed rgba(255,255,255,0.5); display: flex; justify-content: center; align-items: center; position: relative; }
+
+        /* 中間前線交戰石頭節點 */
+        .map-nodes-container { display: flex; justify-content: space-around; flex: 1; margin: 0 3vw; height: 100%; align-items: center; z-index: 2; position: relative; }
+        
+        /* 完美還原 image_fe679c.png 具有高光、外圈厚度與草地陰影的立體石頭 */
+        .map-node { 
+            width: 7vh; 
+            height: 7vh; 
+            /* 石頭本身的漸層高光 */
+            background: radial-gradient(circle at 50% 20%, #f1f2f6 0%, #bdc3c7 70%, #95a5a6 100%); 
+            /* 石頭邊緣的深色立體外圈 */
+            border: 4px solid #7f8c8d; 
+            border-radius: 50%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative; 
+            /* 第一層內陰影製造圓弧邊，外兩層製造立體厚度與落地陰影 */
+            box-shadow: 
+                inset 0 4px 6px rgba(255,255,255,0.8),
+                0 6px 0 #57606f, 
+                0 10px 12px rgba(0,0,0,0.3); 
+        }
+        
+        /* 中央黃金遭遇戰節點立體化 */
+        .map-node.center-encounter-node { 
+            background: radial-gradient(circle at 50% 20%, #ffeaa7 0%, #f1c40f 70%, #d35400 100%);
+            border-color: #e67e22; 
+            width: 8vh; 
+            height: 8vh; 
+            box-shadow: 
+                inset 0 4px 6px rgba(255,255,255,0.8),
+                0 6px 0 #b33939, 
+                0 10px 15px rgba(0,0,0,0.4); 
+            color: #d35400; 
+        }
+
+        /* Q版士兵棋子本體，維持常駐內嵌 */
+        .avatar-soldier { width: 5.6vh; height: 5.6vh; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 2.4vh; font-weight: bold; color: white; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); position: absolute; top: -7px; left: -7px; z-index: 10; animation: bouncePawn 0.4s infinite alternate; }
+        .soldier-blue-hero { background-color: #00a8ff; } 
+        .soldier-red-hero { background-color: #2ed573; }  
+
+        @keyframes bouncePawn {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-5px); }
+        }
+
+        .has-blue-soldier #blue-soldier-token { display: flex; }
+        .has-red-soldier #red-soldier-token { display: flex; }
+
+        /* 下半部：獨立作答大色塊區 */
+        .battle-zone { display: flex; height: 49vh; position: relative; }
+        .divider-line { position: absolute; left: 50%; top: 5%; bottom: 5%; width: 4px; background: rgba(255,255,255,0.2); transform: translateX(-50%); z-index: 10; }
+
+        .team-panel { width: 50%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-around; padding: 2.5vh 2vw; color: white; }
+        .panel-blue { background-color: #0088cc; border-top: 5px solid #1a252f; }
+        .panel-red { background-color: #ff4757; border-top: 5px solid #1a252f; }
+
+        .challenge-title { font-size: 3vh; font-weight: bold; margin: 0.5vh 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .decode-banner { font-size: 3.6vh; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); letter-spacing: 2px; display: flex; align-items: center; gap: 8px; }
+
+        /* 字母挖空空格 */
+        .slots-container { display: flex; justify-content: center; gap: 1vw; margin: 0.5vh 0; min-height: 5.5vh; }
+        .letter-slot { width: 4.5vh; border-bottom: 5px solid white; font-size: 3.8vh; font-weight: bold; text-align: center; height: 5.5vh; display: flex; align-items: flex-end; justify-content: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); color: white; }
+        .letter-slot.blank-hole { border-bottom: 5px solid #f1c40f; color: #f1c40f; }
+
+        /* 隨機字母按鈕 */
+        .letters-container { display: flex; justify-content: center; gap: 1.2vw; flex-wrap: wrap; margin: 0.5vh 0; max-width: 95%; min-height: 8vh; }
+        .letter-cube { width: 7.5vh; height: 8vh; background: white; color: #2c3e50; border-radius: 14px; font-size: 3.4vh; font-weight: bold; display: flex; justify-content: center; align-items: center; box-shadow: 0 0.6vh 0 #b2bec3, 0 0.8vh 1.5vh rgba(0,0,0,0.2); cursor: pointer; }
+        .letter-cube.used { opacity: 0.15; pointer-events: none; transform: scale(0.9) translateY(0.4vh); box-shadow: none; }
+
+        /* 功能控制鍵 */
+        .control-btns { display: flex; gap: 2vw; }
+        .action-btn { width: 7vh; height: 7vh; border-radius: 18px; border: none; font-size: 3vh; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 0.5vh 0 rgba(0,0,0,0.2); color: white; }
+        .btn-clear { background: #e67e22; }
+        .btn-back { background: #d35400; }
+
+        /* 後台彈出視窗 */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 200; justify-content: center; align-items: center; }
+        .modal-window { background: white; width: 600px; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .modal-window h2 { margin-top: 0; color: #2c3e50; }
+        .modal-window textarea { width: 100%; height: 180px; padding: 10px; font-size: 16px; margin-top: 10px; border: 2px solid #bdc3c7; border-radius: 8px; font-family: monospace; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; }
+
+        /* 遭遇猜拳對決視窗 */
+        .rps-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; }
+        .rps-window { background: #fffdf0; width: 800px; border: 6px solid #d35400; border-radius: 28px; display: flex; flex-direction: column; align-items: center; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .rps-main-title { font-size: 42px; font-weight: bold; color: #c0392b; margin: 0 0 5px 0; letter-spacing: 2px; }
+        .rps-subtitle { font-size: 22px; font-weight: bold; color: #2c3e50; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px dashed #d35400; width: 100%; text-align: center; }
+        .rps-columns-box { display: flex; width: 100%; justify-content: space-around; }
+        .rps-player-card { width: 46%; background: white; border: 4px solid #bdc3c7; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        .rps-player-card.blue-team-card { border-color: #0088cc; background: #f0f8ff; }
+        .rps-player-card.red-team-card { border-color: #ff4757; background: #fff5f5; }
+        .rps-circle-btn { width: 95px; height: 95px; border-radius: 50%; border: 3px solid #2c3e50; background: white; font-size: 48px; cursor: pointer; display: flex; justify-content: center; align-items: center; box-shadow: 0 6px 0 #7f8c8d; margin: 5px; transition: transform 0.1s; }
+        .rps-circle-btn:active, .rps-circle-btn.chosen { transform: translateY(4px); box-shadow: 0 2px 0 #7f8c8d; background: #f1c40f; border-color: #d35400; }
+        .rps-status-lbl { font-size: 20px; font-weight: bold; margin-top: 15px; color: #34495e; }
+        .rps-footer-rule { font-size: 22px; font-weight: bold; color: #c0392b; margin-top: 25px; background: #ffeaa7; padding: 8px 40px; border-radius: 30px; border: 3px solid #e74c3c; box-shadow: 0 4px 0 #d35400; }
+    </style>
+<link rel="stylesheet" href="../css/game-layout.css">
+</head>
+<body>
+
+<div class="admin-bar">
+    <button class="admin-btn start" id="start-btn" onclick="startGame()">▶️ 開始遊戲</button>
+    <button class="admin-btn config" onclick="openConfigModal()">🗂️ 自訂題庫後台</button>
+    <button class="admin-btn" onclick="location.reload()">🔄 清空重置</button>
+</div>
+
+<div class="game-stage">
+    <!-- 【上半部：森林城堡大沙盤地圖】 -->
+    <div class="map-dashboard">
+        <!-- 精準實作圖片底部的粗體黃色行軍路徑線 -->
+        <div class="map-path-line"></div>
+
+        <div class="info-row">
+            <div>藍隊城堡寶石: <span id="scoreA" class="gem-span">💎💎💎</span></div>
+            <div class="timer-text">⏱️ 剩餘時間: <span id="time-display">120</span> 秒</div>
+            <div>紅隊城堡寶石: <span id="scoreB" class="gem-span">💎💎💎</span></div>
+        </div>
+
+        <div class="battle-map">
+            <div class="castle castle-blue" id="node-0">
+                <div class="castle-title-lbl">藍隊城堡</div>
+                <div class="castle-door-spot">🏰</div>
+            </div>
+            
+            <div class="map-nodes-container">
+                <div class="map-node" id="node-1"></div>
+                <div class="map-node" id="node-2"></div>
+                <div class="map-node center-encounter-node" id="node-3">⚔️</div>
+                <div class="map-node" id="node-4"></div>
+                <div class="map-node" id="node-5"></div>
+            </div>
+            
+            <div class="castle castle-red" id="node-6">
+                <div class="castle-title-lbl">紅隊城堡</div>
+                <div class="castle-door-spot">🏰</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 【下半部：獨立作答面板區】 -->
+    <div class="battle-zone">
+        <div class="divider-line"></div>
+
+        <!-- 左側：藍隊作答區 -->
+        <div class="team-panel panel-blue">
+            <div class="challenge-title" id="titleA">當前挑戰：第 1 題</div>
+            <div class="decode-banner">🔍 英文單字填空挑戰</div>
+            <div class="slots-container" id="slots-A"></div>
+            <div class="letters-container" id="letters-A"></div>
+            <div class="control-btns">
+                <button class="action-btn btn-clear" onclick="clearInput('A')">🔁</button>
+                <button class="action-btn btn-back" onclick="backspaceInput('A')">⌫</button>
+            </div>
+        </div>
+
+        <!-- 右側：紅隊作答區 -->
+        <div class="team-panel panel-red">
+            <div class="challenge-title" id="titleB">當前挑戰：第 1 題</div>
+            <div class="decode-banner">🔍 英文單字填空挑戰</div>
+            <div class="slots-container" id="slots-B"></div>
+            <div class="letters-container" id="letters-B"></div>
+            <div class="control-btns">
+                <button class="action-btn btn-clear" onclick="clearInput('B')">🔁</button>
+                <button class="action-btn btn-back" onclick="backspaceInput('B')">⌫</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 士兵棋子元件 -->
+<div class="avatar-soldier soldier-blue-hero" id="blue-soldier-token">A</div>
+<div class="avatar-soldier soldier-red-hero" id="red-soldier-token">B</div>
+
+<!-- 自訂題庫後台 -->
+<div class="modal-overlay" id="config-modal">
+    <div class="modal-window">
+        <h2>🗂️ 自訂題庫後台（字數不限）</h2>
+        <p style="color: #7f8c8d; font-size: 14px; margin: 0;">請輸入英文單字，彼此以<b>英文逗號</b>隔開：</p>
+        <textarea id="vocab-input">pizza, soup, noodles, salad, juice, bananas, pears, apples, kiwis, oranges, mangoes, grapes, strawberries</textarea>
+        <div class="modal-buttons">
+            <button class="admin-btn" style="background:#95a5a6;" onclick="closeConfigModal()">取消</button>
+            <button class="admin-btn" style="background:#2ecc71;" onclick="saveVocabConfig()">💾 儲存並抽題</button>
+        </div>
+    </div>
+</div>
+
+<!-- 遭遇猜拳對決視窗 -->
+<div class="rps-overlay" id="rps-screen">
+    <div class="rps-window">
+        <div class="rps-main-title">遭遇戰！請猜拳！</div>
+        <div class="rps-subtitle">⏱️ 限時出拳！剩餘時間: <span id="rps-countdown" style="color:red; font-size:28px;">3</span> 秒</div>
+        <div class="rps-columns-box">
+            <div class="rps-player-card blue-team-card">
+                <h3 style="margin:0 0 12px 0; color:#0088cc; font-size:24px;">🔵 藍隊選手</h3>
+                <div style="display:flex;">
+                    <button class="rps-circle-btn" id="btn-A-rock" onclick="recordRPS('A', 'rock')">✊</button>
+                    <button class="rps-circle-btn" id="btn-A-scissors" onclick="recordRPS('A', 'scissors')">✌️</button>
+                    <button class="rps-circle-btn" id="btn-A-paper" onclick="recordRPS('A', 'paper')">🖐️</button>
+                </div>
+                <div class="rps-status-lbl" id="lbl-A">等待出拳...</div>
+            </div>
+            <div class="rps-player-card red-team-card">
+                <h3 style="margin:0 0 12px 0; color:#ff4757; font-size:24px;">🟢 紅隊選手</h3>
+                <div style="display:flex;">
+                    <button class="rps-circle-btn" id="btn-B-rock" onclick="recordRPS('B', 'rock')">✊</button>
+                    <button class="rps-circle-btn" id="btn-B-scissors" onclick="recordRPS('B', 'scissors')">✌️</button>
+                    <button class="rps-circle-btn" id="btn-B-paper" onclick="recordRPS('B', 'paper')">🖐️</button>
+                </div>
+                <div class="rps-status-lbl" id="lbl-B">等待出拳...</div>
+            </div>
+        </div>
+        <div class="rps-footer-rule">贏的人繼續前進，輸的人回城堡！</div>
+    </div>
+</div>
+
+<script>
+    let globalWordPool = ["pizza", "soup", "noodles", "salad", "juice", "bananas", "pears", "apples", "kiwis", "oranges", "mangoes", "grapes", "strawberries"];
+    let activeLevelWords = [];
+
+    let scoreA = 3, scoreB = 3;
+    let timeLeft = 120, rpsTimeLeft = 3;
+    let mainTimer = null, rpsTimer = null;
+    let gameActive = false, rpsActive = false;
+    let choiceA = null, choiceB = null;
+
+    let indexA = 0, indexB = 6;
+    let puzzleA = {}, puzzleB = {};
+    let currentInputA = [], currentInputB = [];
+
+    function loadVocabConfig() {
+        const savedData = localStorage.getItem('vocab_pool_castle_vfinal_stone');
+        if (savedData) {
+            globalWordPool = savedData.split(',').map(item => item.trim().toLowerCase()).filter(item => item.length > 0);
+            document.getElementById('vocab-input').value = savedData;
+        }
+        pickRandomSixWords();
+    }
+
+    function pickRandomSixWords() {
+        if (globalWordPool.length < 6) {
+            globalWordPool = ["apple", "banana", "cherry", "orange", "lemon", "grape"];
+        }
+        let shuffled = [...globalWordPool].sort(() => Math.random() - 0.5);
+        activeLevelWords = shuffled.slice(0, 6);
+    }
+
+    function openConfigModal() { document.getElementById('config-modal').style.display = 'flex'; }
+    function closeConfigModal() { document.getElementById('config-modal').style.display = 'none'; }
+
+    function saveVocabConfig() {
+        const inputVal = document.getElementById('vocab-input').value.trim();
+        let parsed = inputVal.split(',').map(item => item.trim().toLowerCase()).filter(item => item.length > 0);
+        if (parsed.length < 6) { alert('⚠️ 請至少輸入 6 個以上的英文單字！'); return; }
+        
+        localStorage.setItem('vocab_pool_castle_vfinal_stone', inputVal);
+        globalWordPool = parsed;
+        pickRandomSixWords();
+        alert(`💾 題庫儲存與隨機抽題成功！`);
+        closeConfigModal();
+        
+        indexA = 0; indexB = 6;
+        initPanelQuestion('A'); initPanelQuestion('B'); refreshMapPawns();
+    }
+
+    function refreshMapPawns() {
+        for(let i=0; i<=6; i++) {
+            const nodeEl = document.getElementById(`node-${i}`);
+            if(nodeEl) nodeEl.classList.remove('has-blue-soldier', 'has-red-soldier');
+        }
+        const spotA = document.getElementById(`node-${indexA}`);
+        if(spotA) {
+            (spotA.querySelector('.castle-door-spot') || spotA).appendChild(document.getElementById('blue-soldier-token'));
+            spotA.classList.add('has-blue-soldier');
+        }
+        const spotB = document.getElementById(`node-${indexB}`);
+        if(spotB) {
+            (spotB.querySelector('.castle-door-spot') || spotB).appendChild(document.getElementById('red-soldier-token'));
+            spotB.classList.add('has-red-soldier');
+        }
+    }
+
+    function makePuzzle(wordStr) {
+        let chars = wordStr.split('');
+        let len = chars.length;
+        let holesCount = (len <= 4) ? 2 : 3;
+        
+        let indexes = [];
+        while(indexes.length < holesCount) {
+            let randIdx = Math.floor(Math.random() * len);
+            if(!indexes.includes(randIdx)) indexes.push(randIdx);
+        }
+        indexes.sort((a, b) => a - b);
+
+        let slots = [...chars];
+        let missingChars = [];
+        indexes.forEach(idx => {
+            missingChars.push(chars[idx]);
+            slots[idx] = "";
+        });
+
+        let scrambledChoices = [...missingChars].sort(() => Math.random() - 0.5);
+
+        return {
+            original: wordStr,
+            slots: slots,
+            missingIndexes: indexes,
+            missingChars: missingChars,
+            choices: scrambledChoices
+        };
+    }
+
+    function initPanelQuestion(team) {
+        const progressIdx = (team === 'A') ? indexA : (6 - indexB);
+        const currentWord = activeLevelWords[Math.min(progressIdx, 5)];
+        
+        document.getElementById(`title${team}`).innerText = `當前挑戰：第 ${progressIdx + 1} 題`;
+
+        const puzzle = makePuzzle(currentWord);
+        if (team === 'A') { puzzleA = puzzle; currentInputA = []; } 
+        else { puzzleB = puzzle; currentInputB = []; }
+
+        const slotsDiv = document.getElementById(`slots-${team}`); 
+        slotsDiv.innerHTML = '';
+        puzzle.slots.forEach((char, i) => {
+            if(char === "") {
+                slotsDiv.innerHTML += `<div class="letter-slot blank-hole" id="slot-${team}-${i}">&nbsp;</div>`;
+            } else {
+                slotsDiv.innerHTML += `<div class="letter-slot" id="slot-${team}-${i}">${char}</div>`;
+            }
+        });
+
+        const lettersDiv = document.getElementById(`letters-${team}`); 
+        lettersDiv.innerHTML = '';
+        puzzle.choices.forEach((char, lIdx) => { 
+            lettersDiv.innerHTML += `<div class="letter-cube" id="cube-${team}-${lIdx}" onclick="clickLetter('${team}', ${lIdx}, '${char}')">${char}</div>`; 
+        });
+    }
+
+    function clickLetter(team, lIdx, char) {
+        if (!gameActive || rpsActive) return;
+        
+        const puzzle = (team === 'A') ? puzzleA : puzzleB;
+        const inputArr = (team === 'A') ? currentInputA : currentInputB;
+
+        if (inputArr.length >= puzzle.missingIndexes.length) return;
+
+        inputArr.push({ lIdx, char });
+        document.getElementById(`cube-${team}-${lIdx}`).classList.add('used');
+
+        const activeHoleTargetIndex = puzzle.missingIndexes[inputArr.length - 1];
+        document.getElementById(`slot-${team}-${activeHoleTargetIndex}`).innerText = char;
+
+        if (inputArr.length === puzzle.missingIndexes.length) {
+            let isCorrect = true;
+            for(let i=0; i<puzzle.missingIndexes.length; i++) {
+                const targetHoleIdx = puzzle.missingIndexes[i];
+                if(inputArr[i].char !== puzzle.original[targetHoleIdx]) {
+                    isCorrect = false; break;
+                }
+            }
+
+            if (isCorrect) {
+                if (team === 'A') {
+                    indexA++; refreshMapPawns();
+                    if (indexA > 5) { alert('🏰 🎉 藍隊士兵成功攻陷紅隊城堡！'); settleRound('A'); return; } 
+                    else { initPanelQuestion('A'); }
+                } else {
+                    indexB--; refreshMapPawns();
+                    if (indexB < 1) { alert('🏰 🎉 紅隊士兵成功攻陷藍隊城堡！'); settleRound('B'); return; } 
+                    else { initPanelQuestion('B'); }
+                }
+                checkEncounter();
+            } else {
+                setTimeout(() => clearInput(team), 350);
+            }
+        }
+    }
+
+    function clearInput(team) {
+        const inputArr = (team === 'A') ? currentInputA : currentInputB;
+        const puzzle = (team === 'A') ? puzzleA : puzzleB;
+        
+        inputArr.forEach(item => document.getElementById(`cube-${team}-${item.lIdx}`).classList.remove('used'));
+        puzzle.missingIndexes.forEach(idx => {
+            document.getElementById(`slot-${team}-${idx}`).innerHTML = '&nbsp;';
+        });
+        
+        if (team === 'A') currentInputA = []; else currentInputB = [];
+    }
+
+    function backspaceInput(team) {
+        const inputArr = (team === 'A') ? currentInputA : currentInputB;
+        const puzzle = (team === 'A') ? puzzleA : puzzleB;
+        if (inputArr.length === 0) return;
+        
+        const last = inputArr.pop();
+        document.getElementById(`cube-${team}-${last.lIdx}`).classList.remove('used');
+        
+        const targetHoleIdx = puzzle.missingIndexes[inputArr.length];
+        document.getElementById(`slot-${team}-${targetHoleIdx}`).innerHTML = '&nbsp;';
+    }
+
+    function checkEncounter() {
+        if (indexA >= indexB) { triggerRPS(); }
+    }
+
+    function triggerRPS() {
+        rpsActive = true; choiceA = null; choiceB = null; rpsTimeLeft = 3;
+        document.querySelectorAll('.rps-circle-btn').forEach(b => b.classList.remove('chosen'));
+        document.getElementById('lbl-A').innerText = "等待出拳..."; document.getElementById('lbl-B').innerText = "等待出拳...";
+        document.getElementById('rps-countdown').innerText = rpsTimeLeft; document.getElementById('rps-screen').style.display = 'flex';
+
+        clearInterval(rpsTimer);
+        rpsTimer = setInterval(() => {
+            rpsTimeLeft--; document.getElementById('rps-countdown').innerText = rpsTimeLeft;
+            if (rpsTimeLeft <= 0) { clearInterval(rpsTimer); settleRPS(); }
+        }, 1000);
+    }
+
+    function recordRPS(team, type) {
+        if (!rpsActive) return;
+        if (team === 'A') {
+            choiceA = type; document.querySelectorAll('.blue-team-card .rps-circle-btn').forEach(b => b.classList.remove('chosen'));
+            document.getElementById(`btn-A-${type}`).classList.add('chosen'); document.getElementById('lbl-A').innerText = "🔴 已出拳";
+        } else {
+            choiceB = type; document.querySelectorAll('.red-team-card .rps-circle-btn').forEach(b => b.classList.remove('chosen'));
+            document.getElementById(`btn-B-${type}`).classList.add('chosen'); document.getElementById('lbl-B').innerText = "🟢 已出拳";
+        }
+    }
+
+    function settleRPS() {
+        let win = (choiceA === choiceB) ? 'tie' : ((!choiceA) ? 'B' : ((!choiceB) ? 'A' : (
+            (choiceA === 'rock' && choiceB === 'scissors') || (choiceA === 'paper' && choiceB === 'rock') || (choiceA === 'scissors' && choiceB === 'paper') ? 'A' : 'B'
+        )));
+
+        if (win === 'tie') { alert('⚔️ 平手！重新出拳！'); triggerRPS(); } else {
+            document.getElementById('rps-screen').style.display = 'none'; rpsActive = false;
+            if (win === 'A') { 
+                alert('🏆 藍隊猜拳獲勝！🟢 紅隊士兵撤退回老家！'); indexB = 6; initPanelQuestion('B'); 
+            } else { 
+                alert('🏆 紅隊猜拳獲勝！🔵 藍隊士兵撤退回老家！'); indexA = 0; initPanelQuestion('A'); 
+            }
+            refreshMapPawns();
+        }
+    }
+
+    function startGame() {
+        scoreA = 3; scoreB = 3; timeLeft = 120; gameActive = true; rpsActive = false; indexA = 0; indexB = 6;
+        document.getElementById('start-btn').disabled = true; updateScoreUI(); pickRandomSixWords();
+        initPanelQuestion('A'); initPanelQuestion('B');
+        setTimeout(refreshMapPawns, 50);
+
+        clearInterval(mainTimer);
+        mainTimer = setInterval(() => {
+            if (!rpsActive) { timeLeft--; document.getElementById('time-display').innerText = timeLeft; if (timeLeft <= 0) endGame(); }
+        }, 1000);
+    }
+
+    function settleRound(winner) {
+        if (winner === 'A') { scoreB--; scoreA++; } else { scoreA--; scoreB++; }
+        updateScoreUI();
+        if (scoreA <= 0 || scoreB <= 0) { endGame(); } 
+        else { indexA = 0; indexB = 6; pickRandomSixWords(); initPanelQuestion('A'); initPanelQuestion('B'); refreshMapPawns(); }
+    }
+
+    function updateScoreUI() {
+        document.getElementById('scoreA').innerText = '💎'.repeat(Math.max(0, scoreA));
+        document.getElementById('scoreB').innerText = '💎'.repeat(Math.max(0, scoreB));
+    }
+
+    function endGame() {
+        clearInterval(mainTimer); gameActive = false; document.getElementById('start-btn').disabled = false;
+        alert("遊戲結束！" + (scoreA === scoreB ? "雙方平手" : (scoreA > scoreB ? "🎉 藍隊獲得總冠軍！" : "🎉 B組獲得總冠軍！")));
+    }
+
+    loadVocabConfig(); initPanelQuestion('A'); initPanelQuestion('B');
+    setTimeout(refreshMapPawns, 50);
+    window.addEventListener('resize', refreshMapPawns);
+</script>
+<script>
+window.gameTeacherConfig={"id":"castle-defense","selector":"#config-modal"};</script><script src="../js/teacher-settings.js"></script></body>
+</html>

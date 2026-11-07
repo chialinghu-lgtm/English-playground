@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>選擇題搶答拔河大賽 - 中央題目版</title>
+    <link rel="stylesheet" href="../css/classroom.css">
+    <script src="../js/qrcode.min.js"></script>
+    <script src="../js/classroom-bar.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
+        body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: #1e272e; color: white; position: relative; }
+        
+        /* 頂端管理後台 */
+        #admin-panel { background: #2f3640; padding: 12px 12px 12px 180px; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 10; }
+        .admin-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; width: 100%; }
+        #admin-panel input { padding: 10px; font-size: 14px; border-radius: 6px; border: none; background: #f5f6fa; color: #2f3640; font-weight: bold; }
+        #word-input { width: 240px; }
+        
+        #unit-select { padding: 10px; font-size: 14px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; background: #3498db; color: white; }
+        
+        #admin-panel button { padding: 10px 14px; font-size: 14px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; transition: background 0.2s; }
+        .btn-add { background: #4cd137; }
+        .btn-csv { background-color: #10ac84; }
+        .btn-clear-pool { background: #e84118; }
+        .btn-next-game { background: #9c88ff; }
+
+        .pool-container { display: none; } 
+        
+        /* 遊戲舞台區域 */
+        #game-stage { display: flex; flex: 1; width: 100%; position: relative; background: #1e272e; }
+        .team-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 25px 20px; position: relative; height: 100%; transition: opacity 0.3s, filter 0.3s; }
+        .blue-team { background-color: #0984e3; }
+        .red-team { background-color: #d63031; }
+        .team-section.locked { opacity: 0.35; filter: grayscale(80%); pointer-events: none; }
+        
+        .score-streak { 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.25); 
+            padding: 15px; 
+            border-radius: 16px; 
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .score-title { font-size: 30px; font-weight: 900; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+        .heart-container { font-size: 28px; letter-spacing: 4px; transition: all 0.3s; }
+        .heart-lost { opacity: 0.2; filter: grayscale(100%); }
+        
+        .word-clue-display { font-size: 20px; font-weight: bold; min-height: 40px; text-align: center; color: rgba(255, 255, 255, 0.7); margin: 15px 0; }
+        
+        .letters-container { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 85%; min-height: 160px; justify-content: center; align-items: center; margin-bottom: 10px; }
+        .letter-btn { width: 100%; height: 58px; padding: 0 15px; background: white; border: none; border-radius: 14px; font-size: 22px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 10px rgba(0,0,0,0.25); text-transform: none; transition: transform 0.1s; display: flex; align-items: center; justify-content: center; }
+        .letter-btn:active { transform: scale(0.96); }
+        .blue-team .letter-btn { color: #0984e3; }
+        .red-team .letter-btn { color: #d63031; }
+        .letter-btn:disabled { opacity: 0.15; background: #dfe4ea; cursor: not-allowed; box-shadow: none; }
+        
+        /* 中央欄位與拔河機制 */
+        #tug-center { width: 440px; background: #f5f6fa; position: relative; display: flex; flex-direction: column; align-items: center; border-left: 4px solid #dcdde1; border-right: 4px solid #dcdde1; height: 100%; padding-bottom: 25px; }
+        .timer-box { position: absolute; top: 20px; background: white; color: #2f3640; padding: 8px 30px; border-radius: 16px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 5; border: 1px solid #dcdde1; }
+        .timer-digits { font-size: 28px; font-weight: 800; letter-spacing: 1px; }
+        .timer-sub { font-size: 11px; font-weight: bold; color: #718093; text-transform: uppercase; margin-top: 2px; }
+        
+        #rope-container { position: relative; width: 100%; height: 35%; display: flex; align-items: center; justify-content: center; }
+        .center-line { position: absolute; width: 4px; height: 100%; background: #718093; left: 50%; transform: translateX(-50%); opacity: 0.4; }
+        #rope { position: absolute; width: 380px; height: 16px; background: #eccc68; border-radius: 8px; transition: left 0.4s ease-out; left: calc(50% - 190px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 2; border: 1px solid #ffa502; }
+        #rope::after { content: ''; width: 10px; height: 32px; background: #ff4757; position: absolute; left: 50%; transform: translateX(-50%); top: -8px; border-radius: 3px; }
+        
+        .illustration-zone { 
+            width: 92%; 
+            max-width: 400px; 
+            height: 290px; 
+            margin-top: auto; 
+            border-radius: 22px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            background: #2f3640; 
+            padding: 20px; 
+            border: 3px solid #dcdde1;
+        }
+        
+        #main-question-text {
+            font-size: 32px;
+            font-weight: 900;
+            color: #f1c40f;
+            text-align: center;
+            line-height: 1.4;
+            word-break: break-word;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            margin-top: 5px;
+        }
+
+        #victory-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(26, 26, 26, 0.94); z-index: 100; display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        .victory-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; width: 100%; text-align: center; }
+        .victory-text { font-size: 74px; font-weight: 900; color: #ffffff; letter-spacing: 2px; text-shadow: 0 0 20px rgba(255, 255, 255, 0.6); margin-bottom: 25px; animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .blue-win-text { text-shadow: 0 0 30px #0984e3, 0 0 10px #0984e3; }
+        .red-win-text { text-shadow: 0 0 30px #d63031, 0 0 10px #d63031; }
+        .btn-play-again { padding: 16px 50px; font-size: 26px; font-weight: bold; color: white; background: #ffa502; border: none; border-radius: 40px; cursor: pointer; box-shadow: 0 8px 0 #e67e22, 0 10px 20px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 12px; transition: 0.1s; }
+        .btn-play-again:active { transform: translateY(6px); box-shadow: 0 2px 0 #e67e22, 0 4px 10px rgba(0,0,0,0.4); }
+        .decorations { font-size: 24px; color: rgba(255,255,255,0.4); margin-bottom: 15px; }
+        .giant-emoji { font-size: 130px; margin-bottom: 20px; animation: bounce 2s infinite; }
+        
+        #custom-toast {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            background: #ffffff; color: #2f3640; font-size: 22px; font-weight: bold;
+            padding: 16px 36px; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 1000; display: flex; align-items: center; gap: 15px;
+            transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+            border: 3px solid #e1b12c;
+        }
+        #custom-toast.show { top: 35px; }
+
+        @keyframes popUp { from { transform: scale(0.6); } to { transform: scale(1); } }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+<link rel="stylesheet" href="../css/game-layout.css">
+</head>
+<body>
+
+    <div id="custom-toast">
+        <span id="toast-icon">⏰</span>
+        <span id="toast-text">提示內容</span>
+    </div>
+
+    <div id="admin-panel">
+        <div class="admin-controls">
+            <select id="unit-select" onchange="onSelectUnitChange(this.value)">
+                <option value="daily">📂 內建題庫 1：基礎日常英語</option>
+                <option value="grammar">📂 內建題庫 2：常用文法與代名詞</option>
+                <option value="vocab">📂 內建題庫 3：動物與食物單字</option>
+                <option value="custom">📁 自訂 / 已上傳 CSV 題庫</option>
+            </select>
+
+            <input type="text" id="word-input" placeholder="手動輸入：題目-正解-錯1-錯2-錯3">
+            <button class="btn-add" onclick="addWord()">➕ 加入一題</button>
+            
+            <input type="file" id="csv-file-input" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)">
+            <button class="btn-csv" onclick="document.getElementById('csv-file-input').click()">📁 匯入 CSV 題庫</button>
+
+            <button class="btn-clear-pool" onclick="clearWordPool()">🧹 清空題庫</button>
+            <button class="btn-next-game" onclick="setupNewGame()">🎲 換下一題</button>
+        </div>
+        <div class="pool-container">
+            <span id="pool-list"></span>
+        </div>
+    </div>
+
+    <div id="game-stage">
+        <div class="team-section blue-team" id="blue-section">
+            <div class="score-streak">
+                <div class="score-title">BLUE: <span id="blue-score">0</span> / 5</div>
+                <div class="heart-container" id="blue-hearts">❤️❤️</div>
+            </div>
+            <div class="word-clue-display" id="blue-clue">觀察選項搶答</div>
+            <div class="letters-container" id="blue-letters"></div>
+        </div>
+
+        <div id="tug-center">
+            <div class="timer-box">
+                <div class="timer-digits" id="game-timer">00:20</div>
+                <div class="timer-sub" id="timer-status">ADV: TIE</div>
+            </div>
+            <div id="rope-container">
+                <div class="center-line"></div>
+                <div id="rope"></div>
+            </div>
+            
+            <div class="illustration-zone" id="pic-zone">
+                <div style="font-size: 70px; line-height: 1; margin-bottom: 5px; animation: bounce 2s infinite;">🌱</div>
+                <div id="main-question-text">題目載入中...</div>
+            </div>
+        </div>
+
+        <div class="team-section red-team" id="red-section">
+            <div class="score-streak">
+                <div class="score-title">RED: <span id="red-score">0</span> / 5</div>
+                <div class="heart-container" id="red-hearts">❤️❤️</div>
+            </div>
+            <div class="word-clue-display" id="red-clue">觀察選項搶答</div>
+            <div class="letters-container" id="red-letters"></div>
+        </div>
+    </div>
+
+    <div id="victory-overlay">
+        <div class="victory-panel">
+            <div class="giant-emoji" id="victory-emoji">😆</div>
+            <div class="decorations">✨ 🏆 ⭐ 🏆 ✨</div>
+            <div class="victory-text" id="victory-msg">BLUE TEAM WINS!</div>
+            <button class="btn-play-again" onclick="resetWholeGame()">🚀 PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const PRESET_QUIZ_UNITS = {
+            "daily": [
+                { q: "Look at ___ grapes.", a: "these", ops: ["these", "this", "that", "those"] },
+                { q: "___ soup is hot.", a: "That", ops: ["That", "Those", "These", "This"] },
+                { q: "I don't ___ apples.", a: "like", ops: ["like", "likes", "liking", "liked"] },
+                { q: "Look at ___ olives.", a: "these", ops: ["these", "this", "that", "those"] },
+                { q: "___ juice is colorful.", a: "That", ops: ["That", "Those", "These", "They"] },
+                { q: "I don't like ____.", a: "cake", ops: ["cake", "kiwi", "banana", "apple"] },
+                { q: "___ is my skirt.", a: "This", ops: ["This", "These", "Those", "They"] },
+                { q: "___ are his shoes.", a: "Those", ops: ["Those", "This", "That", "It"] },
+                { q: "___ is her ice cream.", a: "That", ops: ["That", "Those", "These", "They"] }
+            ],
+            "grammar": [
+                { q: "I ___ a student.", a: "am", ops: ["am", "is", "are", "be"] },
+                { q: "He ___ English every day.", a: "studies", ops: ["studies", "study", "studying", "studied"] },
+                { q: "Thank you ___ much.", a: "so", ops: ["so", "many", "very", "too"] },
+                { q: "She ___ to school by bus.", a: "goes", ops: ["goes", "go", "going", "went"] },
+                { q: "They ___ playing basketball.", a: "are", ops: ["are", "is", "am", "be"] },
+                { q: "Where ___ you from?", a: "are", ops: ["are", "is", "am", "do"] },
+                { q: "What time ___ it?", a: "is", ops: ["is", "are", "am", "do"] },
+                { q: "We ___ happy today.", a: "are", ops: ["are", "is", "am", "be"] }
+            ],
+            "vocab": [
+                { q: "大象的英文是？", a: "elephant", ops: ["elephant", "tiger", "lion", "monkey"] },
+                { q: "貓咪的英文是？", a: "cat", ops: ["cat", "dog", "rabbit", "panda"] },
+                { q: "星期一的英文是？", a: "Monday", ops: ["Monday", "Sunday", "Friday", "Tuesday"] },
+                { q: "香蕉的英文是？", a: "banana", ops: ["banana", "apple", "orange", "grape"] },
+                { q: "冰淇淋的英文是？", a: "ice cream", ops: ["ice cream", "pizza", "noodles", "salad"] },
+                { q: "紅色的英文是？", a: "red", ops: ["red", "blue", "green", "yellow"] },
+                { q: "交通工具的英文是？", a: "transportation", ops: ["transportation", "station", "supermarket", "hospital"] }
+            ]
+        };
+
+        let MY_WORD_POOL = [...PRESET_QUIZ_UNITS.daily]; 
+        let currentQuestion = null;       
+        let tugPosition = 0;
+        const maxTugOffset = 120; 
+        let scores = { blue: 0, red: 0 };
+        const WINNING_GOAL = 5; 
+        let teamLives = { blue: 2, red: 2 };
+        
+        let timeLeft = 20;
+        let timerInterval = null;
+        let audioCtx = null;
+        let isGameOver = false;
+
+        function onSelectUnitChange(val) {
+            if (val === 'custom') {
+                document.getElementById('csv-file-input').click();
+                return;
+            }
+            if (PRESET_QUIZ_UNITS[val]) {
+                MY_WORD_POOL = [...PRESET_QUIZ_UNITS[val]];
+                updatePoolDisplay();
+                showNotification(`已切換題庫 (${MY_WORD_POOL.length} 題)`, "📂");
+                setupNewGame();
+            }
+        }
+
+        function showNotification(text, icon) {
+            const toast = document.getElementById('custom-toast');
+            document.getElementById('toast-text').innerText = text;
+            document.getElementById('toast-icon').innerText = icon;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 1400);
+        }
+
+        function playTeamSound(type) {
+            if (window.isClassroomMuted) return;
+            try {
+                if (!audioCtx) { 
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+                    window.audioCtx = audioCtx;
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const now = audioCtx.currentTime;
+
+                if (type === 'blue_correct') {
+                    let osc1 = audioCtx.createOscillator();
+                    let gain1 = audioCtx.createGain();
+                    osc1.type = 'sine';
+                    osc1.frequency.setValueAtTime(987.77, now); 
+                    gain1.gain.setValueAtTime(0.1, now);
+                    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc1.connect(gain1); gain1.connect(audioCtx.destination);
+                    osc1.start(now); osc1.stop(now + 0.25);
+
+                    setTimeout(() => {
+                        let osc2 = audioCtx.createOscillator();
+                        let gain2 = audioCtx.createGain();
+                        osc2.type = 'sine';
+                        osc2.frequency.setValueAtTime(1318.51, audioCtx.currentTime); 
+                        gain2.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                        gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                        osc2.connect(gain2); gain2.connect(audioCtx.destination);
+                        osc2.start(); osc2.stop(audioCtx.currentTime + 0.25);
+                    }, 80);
+
+                } else if (type === 'red_correct') {
+                    let osc1 = audioCtx.createOscillator();
+                    let gain1 = audioCtx.createGain();
+                    osc1.type = 'triangle'; 
+                    osc1.frequency.setValueAtTime(783.99, now); 
+                    gain1.gain.setValueAtTime(0.1, now);
+                    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc1.connect(gain1); gain1.connect(audioCtx.destination);
+                    osc1.start(now); osc1.stop(now + 0.35);
+
+                    setTimeout(() => {
+                        let osc2 = audioCtx.createOscillator();
+                        let gain2 = audioCtx.createGain();
+                        osc2.type = 'sine';
+                        osc2.frequency.setValueAtTime(1174.66, audioCtx.currentTime); 
+                        gain2.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                        gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                        osc2.connect(gain2); gain2.connect(audioCtx.destination);
+                        osc2.start(); osc2.stop(audioCtx.currentTime + 0.35);
+                    }, 60);
+
+                } else if (type === 'wrong') {
+                    let osc = audioCtx.createOscillator();
+                    let gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(190, now);
+                    osc.frequency.linearRampToValueAtTime(80, now + 0.4); 
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(now); osc.stop(now + 0.4);
+
+                } else if (type === 'game_over') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; 
+                    notes.forEach((freq, index) => {
+                        setTimeout(() => {
+                            let osc = audioCtx.createOscillator();
+                            let gain = audioCtx.createGain();
+                            osc.type = (index === 3) ? 'square' : 'sine'; 
+                            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (index === 3 ? 0.8 : 0.4));
+                            osc.connect(gain); gain.connect(audioCtx.destination);
+                            osc.start(); osc.stop(audioCtx.currentTime + (index === 3 ? 0.8 : 0.4));
+                        }, index * 140);
+                    });
+                }
+            } catch (e) { console.log("音訊錯誤", e); }
+        }
+
+        function updatePoolDisplay() {
+            const poolDisplay = document.getElementById('pool-list'); if (!poolDisplay) return;
+            let questionList = MY_WORD_POOL.map(item => item.q);
+            poolDisplay.innerText = questionList.join('  |  '); 
+        }
+
+        function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split(/\r?\n/);
+                let importCount = 0;
+                let newPool = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    const columns = line.split(',');
+                    if (columns.length >= 4) {
+                        const question = columns[1].trim();
+                        const answer = columns[2].trim();
+                        const optionsStr = columns[3].trim();
+                        const ops = optionsStr.split('|').map(o => o.trim());
+
+                        if (question && answer && ops.length > 0) {
+                            newPool.push({ q: question, a: answer, ops: ops });
+                            importCount++;
+                        }
+                    }
+                }
+
+                if (importCount > 0) {
+                    MY_WORD_POOL = newPool;
+                    updatePoolDisplay();
+                    document.getElementById('unit-select').value = 'custom';
+                    showNotification(`成功載入 ${importCount} 道選擇題！`, "📁");
+                    setupNewGame();
+                } else {
+                    showNotification("讀取失敗，請確認該 CSV 的格式結構。", "⚠️");
+                }
+                event.target.value = ''; 
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function addWord() {
+            const inputElement = document.getElementById('word-input'); if (!inputElement) return;
+            let rawInput = inputElement.value.trim();
+            let parts = rawInput.split('-');
+            if (parts.length < 5) { showNotification("手動格式：題目-正解-錯1-錯2-錯3", "⚠️"); return; }
+            
+            let q = parts[0].trim();
+            let a = parts[1].trim();
+            let ops = [parts[1].trim(), parts[2].trim(), parts[3].trim(), parts[4].trim()];
+
+            MY_WORD_POOL.push({ q: q, a: a, ops: ops });
+            updatePoolDisplay();
+            inputElement.value = "";
+            showNotification(`手動建立題庫成功！`, "➕");
+            if (!currentQuestion) setupNewGame();
+        }
+
+        function clearWordPool() {
+            if (confirm("確定要將所有已儲存的題庫清空嗎？")) {
+                MY_WORD_POOL = []; currentQuestion = null;
+                updatePoolDisplay(); resetStageDisplay(); clearInterval(timerInterval);
+                document.getElementById('game-timer').innerText = "00:00";
+            }
+        }
+
+        function resetStageDisplay() {
+            document.getElementById('pic-zone').innerHTML = '<div style="font-size: 70px; line-height: 1; margin-bottom: 5px; animation: bounce 2s infinite;">🌱</div><div id="main-question-text">請選擇題庫開始拔河</div>';
+            document.getElementById('blue-letters').innerHTML = '';
+            document.getElementById('red-letters').innerHTML = '';
+            document.getElementById('blue-clue').innerText = "等待題庫載入";
+            document.getElementById('red-clue').innerText = "等待題庫載入";
+            resetHeartsDisplay();
+        }
+
+        function resetHeartsDisplay() {
+            teamLives = { blue: 2, red: 2 };
+            document.getElementById('blue-hearts').innerHTML = '❤️❤️';
+            document.getElementById('red-hearts').innerHTML = '❤️❤️';
+            document.getElementById('blue-section').classList.remove('locked');
+            document.getElementById('red-section').classList.remove('locked');
+        }
+
+        function setupNewGame() {
+            if (isGameOver) return; 
+            if (MY_WORD_POOL.length === 0) { resetStageDisplay(); return; }
+            
+            currentQuestion = MY_WORD_POOL[Math.floor(Math.random() * MY_WORD_POOL.length)];
+            
+            const picZone = document.getElementById('pic-zone');
+            picZone.innerHTML = `
+                <div style="font-size: 70px; line-height: 1; margin-bottom: 5px; animation: bounce 2s infinite;">🌱</div>
+                <div id="main-question-text">${currentQuestion.q}</div>
+            `;
+
+            document.getElementById('blue-clue').innerText = "👇 請觀察下方按鈕搶答 👇";
+            document.getElementById('red-clue').innerText = "👇 請觀察下方按鈕搶答 👇";
+
+            resetHeartsDisplay(); 
+            renderOptionButtons('blue');
+            renderOptionButtons('red');
+            resetTimer(); 
+        }
+
+        function renderOptionButtons(team) {
+            const container = document.getElementById(`${team}-letters`); if (!container) return;
+            container.innerHTML = '';
+            
+            let shuffledOps = [...currentQuestion.ops].sort(() => Math.random() - 0.5);
+            
+            shuffledOps.forEach((optionText) => {
+                const btn = document.createElement('button');
+                btn.className = 'letter-btn'; btn.innerText = optionText;
+                btn.onclick = () => {
+                    if (teamLives[team] <= 0 || isGameOver) return;
+                    handleAnswerSelection(team, optionText);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function handleAnswerSelection(team, chosenAnswer) {
+            if (isGameOver) return;
+            const otherTeam = (team === 'blue' ? 'red' : 'blue');
+
+            if (chosenAnswer === currentQuestion.a) {
+                playTeamSound(`${team}_correct`); 
+                scores[team]++;
+                document.getElementById(`${team}-score`).innerText = scores[team];
+                
+                tugPosition += (team === 'blue' ? -35 : 35);
+                applyRopePhysics();
+                showNotification(`${team === 'blue' ? '藍隊' : '紅隊'} 搶答正確！`, "🎉");
+
+                checkMatchOver(team);
+            } else {
+                playTeamSound('wrong'); 
+                teamLives[team]--;
+                
+                scores[otherTeam]++; 
+                document.getElementById(`${otherTeam}-score`).innerText = scores[otherTeam];
+                
+                tugPosition += (team === 'blue' ? 35 : -35);
+                applyRopePhysics();
+
+                if (teamLives[team] === 1) {
+                    document.getElementById(`${team}-hearts`).innerHTML = '❤️<span class="heart-lost">❤️</span>';
+                    showNotification(`${team === 'blue' ? '藍隊' : '紅隊'} 答錯！分數送給對手！`, "❌");
+                } else if (teamLives[team] <= 0) {
+                    document.getElementById(`${team}-hearts`).innerHTML = '<span class="heart-lost">❤️❤️</span>';
+                    document.getElementById(`${team}-section`).classList.add('locked');
+                    showNotification(`${team === 'blue' ? '藍隊' : '紅隊'} 機會用盡出局！`, "🔒");
+                }
+
+                checkMatchOver(otherTeam);
+            }
+        }
+
+        function applyRopePhysics() {
+            if (tugPosition < -maxTugOffset) tugPosition = -maxTugOffset;
+            if (tugPosition > maxTugOffset) tugPosition = maxTugOffset;
+            document.getElementById('rope').style.left = `calc(50% - 190px + ${tugPosition}px)`;
+            updateAdvantageStatus();
+        }
+
+        function checkMatchOver(targetTeam) {
+            if (scores[targetTeam] >= WINNING_GOAL) {
+                isGameOver = true; 
+                clearInterval(timerInterval);
+                playTeamSound('game_over'); 
+                setTimeout(() => { showVictoryScreen(targetTeam); }, 200);
+            } else {
+                clearInterval(timerInterval);
+                setTimeout(() => { setupNewGame(); }, 1200); 
+            }
+        }
+
+        function showVictoryScreen(winnerTeam) {
+            const overlay = document.getElementById('victory-overlay'); const msg = document.getElementById('victory-msg'); const emoji = document.getElementById('victory-emoji');
+            if (winnerTeam === 'blue') { msg.innerText = "BLUE TEAM WINS!"; msg.className = "victory-text blue-win-text"; emoji.innerText = "💙🥳"; } 
+            else { msg.innerText = "RED TEAM WINS!"; msg.className = "victory-text red-win-text"; emoji.innerText = "❤️😎"; }
+            overlay.style.display = 'flex';
+        }
+
+        function resetWholeGame() {
+            scores.blue = 0; scores.red = 0; isGameOver = false; 
+            document.getElementById('blue-score').innerText = '0'; document.getElementById('red-score').innerText = '0';
+            tugPosition = 0; document.getElementById('rope').style.left = `calc(50% - 190px)`;
+            document.getElementById('victory-overlay').style.display = 'none';
+            updateAdvantageStatus(); setupNewGame();
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval); if (isGameOver) return;
+            timeLeft = 20;
+            const timerEl = document.getElementById('game-timer'); if (timerEl) timerEl.innerText = `00:${timeLeft}`;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if (timerEl) timerEl.innerText = timeLeft < 10 ? `00:0${timeLeft}` : `00:${timeLeft}`;
+                if (timeLeft <= 0) { 
+                    clearInterval(timerInterval); showNotification("時間到！自動更換下一題！", "⏰"); 
+                    setTimeout(() => { setupNewGame(); }, 1200);
+                }
+            }, 1000);
+        }
+
+        function updateAdvantageStatus() {
+            const statusEl = document.getElementById('timer-status'); if (!statusEl) return;
+            const diff = scores.red - scores.blue;
+            if (diff === 0) { statusEl.innerText = "ADV: TIE"; statusEl.style.color = "#718093"; }
+            else if (diff > 0) { statusEl.innerText = `ADV: RED +${diff}`; statusEl.style.color = "#d63031"; }
+            else { statusEl.innerText = `ADV: BLUE +${Math.abs(diff)}`; statusEl.style.color = "#0984e3"; }
+        }
+
+        window.onload = function() {
+            updatePoolDisplay(); 
+            setupNewGame();
+        };
+    </script>
+<script>window.gameTeacherState={read:()=>({pool:MY_WORD_POOL}),restore:s=>{if(Array.isArray(s.pool)){MY_WORD_POOL=s.pool;updatePoolDisplay();setupNewGame();}}};
+window.gameTeacherConfig={"id":"quiz-battle","selector":"#admin-panel"};</script><script src="../js/teacher-settings.js"></script></body>
+</html>

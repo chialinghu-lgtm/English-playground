@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Word Slot Machine - 單字拉霸機 (課堂分組版)</title>
+    <link rel="stylesheet" href="../css/classroom.css">
+    <script src="../js/qrcode.min.js"></script>
+    <script src="../js/classroom-bar.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', '微軟正黑體', sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px 10px 20px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            color: #ffe66d;
+        }
+
+        .panel-toggle-btn {
+            background-color: #ff7675;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            font-size: 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s ease;
+        }
+
+        .panel-toggle-btn:active {
+            transform: scale(0.96);
+        }
+
+        .teacher-panel {
+            background: #ffffff;
+            color: #2d3436;
+            padding: 16px 20px;
+            border-radius: 12px;
+            width: 95%;
+            max-width: 650px;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            display: block;
+        }
+
+        .teacher-panel.collapsed {
+            display: none;
+        }
+
+        .panel-row {
+            margin-bottom: 12px;
+            text-align: left;
+        }
+
+        .panel-row label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #2d3436;
+        }
+
+        .panel-row input, .panel-row select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 2px solid #b2bec3;
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .panel-row input:focus, .panel-row select:focus {
+            border-color: #0984e3;
+        }
+
+        .btn-apply {
+            background-color: #00b894;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+
+        .dashboard {
+            display: flex;
+            gap: 25px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            background: rgba(0,0,0,0.35);
+            padding: 10px 30px;
+            border-radius: 30px;
+        }
+
+        .timer-warning {
+            color: #ff7675;
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.18); }
+        }
+
+        .slot-machine {
+            background: #2d3436;
+            border: 8px solid #f1c40f;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 650px;
+            width: 95%;
+        }
+
+        .reels-container {
+            display: flex;
+            justify-content: space-between;
+            background: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            border: 4px solid #1e272e;
+        }
+
+        .payline-marker {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 90px;
+            transform: translateY(-50%);
+            border-top: 3px dashed rgba(255, 71, 87, 0.8);
+            border-bottom: 3px dashed rgba(255, 71, 87, 0.8);
+            background: rgba(255, 234, 167, 0.25);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .reel {
+            flex: 1;
+            height: 270px;
+            overflow: hidden;
+            position: relative;
+            border-right: 3px solid #dfe6e9;
+        }
+
+        .reel:last-child {
+            border-right: none;
+        }
+
+        .reel-strip {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            width: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .reel-item {
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #2d3436;
+            user-select: none;
+        }
+
+        .controls-container {
+            margin-top: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .btn-spin {
+            background: linear-gradient(135deg, #00cec9, #0984e3);
+            color: white;
+            font-size: 1.35rem;
+            font-weight: bold;
+            padding: 12px 40px;
+            border: none;
+            border-radius: 35px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(9, 132, 227, 0.4);
+            transition: transform 0.1s ease;
+        }
+
+        .btn-spin:active {
+            transform: scale(0.95);
+        }
+
+        .btn-spin:disabled {
+            background: #b2bec3;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .stop-buttons {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 12px;
+        }
+
+        .btn-stop {
+            flex: 1;
+            background: #d63031;
+            color: white;
+            font-size: 1.15rem;
+            font-weight: bold;
+            padding: 10px 0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(214, 48, 49, 0.4);
+            transition: transform 0.1s ease;
+        }
+
+        .btn-stop:active {
+            transform: scale(0.95);
+        }
+
+        .btn-stop:disabled {
+            background: #636e72;
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.5;
+            transform: none;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            z-index: 100;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            color: #2d3436;
+            padding: 30px 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 420px;
+            width: 85%;
+            transform: scale(0.7);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .modal-sub {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #636e72;
+        }
+
+        .modal-btn {
+            background: #0984e3;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+<link rel="stylesheet" href="../css/game-layout.css">
+</head>
+<body>
+
+    <h1>🎰 Word Slot Machine 🎰</h1>
+    <button class="panel-toggle-btn" onclick="togglePanel()">⚙️ 展開/收合設定面板</button>
+
+    <div class="teacher-panel" id="teacherPanel">
+        <div class="panel-row">
+            <label>1. 單字清單（以逗號隔開，建議至少 4 個）：</label>
+            <input type="text" id="inputWords" value="cat, hat, bat, rat, fan, pan">
+        </div>
+        <div class="panel-row">
+            <label>2. 倒數秒數限制（秒）：</label>
+            <input type="number" id="inputTimer" value="15" min="3" max="60">
+        </div>
+        <div class="panel-row">
+            <label>3. 轉速難度設定：</label>
+            <select id="selectSpeed">
+                <option value="0.75">🐢 烏龜爬行速 (每 2 秒 1 字，超安心認字)</option>
+                <option value="1.2" selected>🌱 一年級推薦速 (每 1.25 秒 1 字，適合低年級)</option>
+                <option value="2.25">超慢速 (每秒 1.5 字)</option>
+                <option value="10">慢速 (普通反應)</option>
+                <option value="18">中等 (標準推薦)</option>
+                <option value="26">快速 (刺激挑戰)</option>
+            </select>
+        </div>
+        <button class="btn-apply" onclick="applySettings()">💾 套用設定並重置</button>
+    </div>
+
+    <div class="dashboard">
+        <div>分數: <span id="scoreDisplay">0</span></div>
+        <div>剩餘時間: <span id="timerDisplay">15</span>s</div>
+    </div>
+
+    <div class="slot-machine">
+        <div class="reels-container">
+            <div class="payline-marker"></div>
+            <div class="reel" id="reel0"><div class="reel-strip" id="strip0"></div></div>
+            <div class="reel" id="reel1"><div class="reel-strip" id="strip1"></div></div>
+            <div class="reel" id="reel2"><div class="reel-strip" id="strip2"></div></div>
+        </div>
+
+        <div class="controls-container">
+            <button class="btn-spin" id="btnSpin" onclick="startGame()">🎲 開始轉動 (SPIN)</button>
+            <div class="stop-buttons">
+                <button class="btn-stop" id="btnStop0" onclick="stopReel(0)" disabled>🛑 停 1</button>
+                <button class="btn-stop" id="btnStop1" onclick="stopReel(1)" disabled>🛑 停 2</button>
+                <button class="btn-stop" id="btnStop2" onclick="stopReel(2)" disabled>🛑 停 3</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="resultModal" onclick="closeModal()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div id="modalTitle" class="modal-title"></div>
+            <div id="modalSub" class="modal-sub"></div>
+            <button class="modal-btn" onclick="closeModal()">再玩一次 🚀</button>
+        </div>
+    </div>
+
+    <script>
+        const ITEM_HEIGHT = 90; 
+        let words = ["cat", "hat", "bat", "rat", "fan", "pan"];
+        let timeLimit = 15;
+        let baseSpeed = 1.2; 
+        let score = 0;
+
+        let reelStrips = [];
+        let isSpinning = [false, false, false];
+        let animationFrameIds = [null, null, null];
+        let stripOffsets = [0, 0, 0];
+        let reelSpeeds = [0, 0, 0];
+        let selectedWords = ["", "", ""];
+
+        let countdownTimer = null;
+        let remainingTime = 15;
+
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTickSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        function playLockSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(180, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playWinSound() {
+            if (!audioCtx) return;
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = "triangle";
+                osc.frequency.value = freq;
+                const startTime = audioCtx.currentTime + idx * 0.12;
+                gain.gain.setValueAtTime(0.15, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.35);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + 0.35);
+            });
+        }
+
+        function playLoseSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.25);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.25);
+        }
+
+        window.onload = () => {
+            reelStrips = [
+                document.getElementById('strip0'),
+                document.getElementById('strip1'),
+                document.getElementById('strip2')
+            ];
+            applySettings();
+        };
+
+        function togglePanel() {
+            document.getElementById('teacherPanel').classList.toggle('collapsed');
+        }
+
+        function applySettings() {
+            const rawWords = document.getElementById('inputWords').value;
+            const parsed = rawWords.split(',').map(w => w.trim()).filter(w => w !== "");
+            if (parsed.length < 3) {
+                alert("請至少輸入 3 個單字！");
+                return;
+            }
+            words = parsed;
+
+            const timeInput = parseInt(document.getElementById('inputTimer').value);
+            timeLimit = isNaN(timeInput) || timeInput < 3 ? 15 : timeInput;
+
+            baseSpeed = parseFloat(document.getElementById('selectSpeed').value);
+
+            resetGameStates();
+            buildReelStrips();
+        }
+
+        function buildReelStrips() {
+            reelStrips.forEach((strip, i) => {
+                strip.innerHTML = "";
+                const repeatCount = 5;
+                for (let r = 0; r < repeatCount; r++) {
+                    words.forEach(word => {
+                        const item = document.createElement('div');
+                        item.className = 'reel-item';
+                        item.innerText = word;
+                        strip.appendChild(item);
+                    });
+                }
+                stripOffsets[i] = -ITEM_HEIGHT;
+                strip.style.transform = `translateY(${stripOffsets[i]}px)`;
+            });
+        }
+
+        function resetGameStates() {
+            clearInterval(countdownTimer);
+            animationFrameIds.forEach(id => cancelAnimationFrame(id));
+            isSpinning = [false, false, false];
+            selectedWords = ["", "", ""];
+
+            document.getElementById('btnSpin').disabled = false;
+            for (let i = 0; i < 3; i++) {
+                document.getElementById(`btnStop${i}`).disabled = true;
+            }
+
+            remainingTime = timeLimit;
+            updateTimerDisplay();
+        }
+
+        function startGame() {
+            initAudio();
+            resetGameStates();
+
+            document.getElementById('btnSpin').disabled = true;
+            for (let i = 0; i < 3; i++) {
+                document.getElementById(`btnStop${i}`).disabled = false;
+                isSpinning[i] = true;
+                // 低速下縮減欄位間差距，避免後續滾輪過快
+                const speedGap = baseSpeed <= 2 ? 0.05 : baseSpeed * 0.08;
+                reelSpeeds[i] = baseSpeed + (i * speedGap);
+                runReel(i);
+            }
+
+            remainingTime = timeLimit;
+            updateTimerDisplay();
+            countdownTimer = setInterval(() => {
+                remainingTime--;
+                updateTimerDisplay();
+
+                if (remainingTime <= 0) {
+                    clearInterval(countdownTimer);
+                    forceStopAll();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const timerEl = document.getElementById('timerDisplay');
+            timerEl.innerText = remainingTime;
+            if (remainingTime <= 3) {
+                timerEl.classList.add('timer-warning');
+            } else {
+                timerEl.classList.remove('timer-warning');
+            }
+        }
+
+        function runReel(index) {
+            const strip = reelStrips[index];
+            const maxScroll = -(words.length * ITEM_HEIGHT * 3);
+
+            function updateLoop() {
+                if (!isSpinning[index]) return;
+
+                stripOffsets[index] -= reelSpeeds[index];
+
+                if (stripOffsets[index] <= maxScroll) {
+                    stripOffsets[index] += (words.length * ITEM_HEIGHT);
+                }
+
+                strip.style.transform = `translateY(${stripOffsets[index]}px)`;
+
+                // 根據速度動態調整 tick 聲的機率，避免慢速時發聲頻率不協調
+                const tickProbability = Math.min(0.15, baseSpeed * 0.015);
+                if (Math.random() < tickProbability) {
+                    playTickSound();
+                }
+
+                animationFrameIds[index] = requestAnimationFrame(updateLoop);
+            }
+
+            animationFrameIds[index] = requestAnimationFrame(updateLoop);
+        }
+
+        function stopReel(index) {
+            if (!isSpinning[index]) return;
+            isSpinning[index] = false;
+            cancelAnimationFrame(animationFrameIds[index]);
+            document.getElementById(`btnStop${index}`).disabled = true;
+
+            playLockSound();
+
+            const currentY = stripOffsets[index];
+            let closestItemIndex = Math.round((-currentY + ITEM_HEIGHT) / ITEM_HEIGHT);
+            let finalY = -(closestItemIndex * ITEM_HEIGHT) + ITEM_HEIGHT;
+
+            const strip = reelStrips[index];
+            strip.style.transition = "transform 0.2s cubic-bezier(0.1, 0.9, 0.2, 1.2)";
+            strip.style.transform = `translateY(${finalY}px)`;
+            stripOffsets[index] = finalY;
+
+            setTimeout(() => {
+                strip.style.transition = "none";
+            }, 200);
+
+            const wordIndex = closestItemIndex % words.length;
+            selectedWords[index] = words[wordIndex];
+
+            if (isSpinning.every(state => !state)) {
+                clearInterval(countdownTimer);
+                setTimeout(checkResult, 300);
+            }
+        }
+
+        function forceStopAll() {
+            for (let i = 0; i < 3; i++) {
+                if (isSpinning[i]) {
+                    stopReel(i);
+                }
+            }
+        }
+
+        function checkResult() {
+            const [w1, w2, w3] = selectedWords;
+            const modal = document.getElementById('resultModal');
+            const titleEl = document.getElementById('modalTitle');
+            const subEl = document.getElementById('modalSub');
+
+            if (w1 === w2 && w2 === w3) {
+                score += 100;
+                document.getElementById('scoreDisplay').innerText = score;
+                playWinSound();
+
+                titleEl.innerText = "🎉 JACKPOT!! 🎉";
+                titleEl.style.color = "#00b894";
+                subEl.innerHTML = `恭喜連線！三個都是 <strong>【${w1}】</strong>！<br>獲得 +100 分！`;
+            } else {
+                playLoseSound();
+                titleEl.innerText = "😅 差一點點！";
+                titleEl.style.color = "#d63031";
+                subEl.innerHTML = `結果是：[${w1}] - [${w2}] - [${w3}]<br>再試一次挑戰三連線吧！`;
+            }
+
+            modal.classList.add('active');
+            document.getElementById('btnSpin').disabled = false;
+        }
+
+        function closeModal() {
+            document.getElementById('resultModal').classList.remove('active');
+        }
+    </script>
+<script>
+window.gameTeacherConfig={"id":"slot-machine","selector":"#teacherPanel"};</script><script src="../js/teacher-settings.js"></script></body>
+</html>

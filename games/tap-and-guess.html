@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tap & Guess (點擊大猜謎) - 課堂分組版</title>
+    <link rel="stylesheet" href="../css/classroom.css">
+    <script src="../js/qrcode.min.js"></script>
+    <script src="../js/classroom-bar.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Comic Sans MS', '微軟正黑體', sans-serif;
+            background-color: #f0f8ff;
+            text-align: center;
+            margin: 0;
+            padding: 50px 10px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1 {
+            color: #ff6b6b;
+            font-size: 2.1rem;
+            margin: 5px 0;
+        }
+        
+        /* 老師面板與收合按鈕 */
+        .panel-toggle-btn {
+            background-color: #6c5ce7;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            font-size: 0.95rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 8px;
+            transition: 0.2s;
+        }
+        .panel-toggle-btn:hover {
+            background-color: #5b4bc4;
+        }
+        .teacher-panel {
+            background: #fff;
+            padding: 12px 18px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 12px;
+            border: 2px dashed #4ecdc4;
+            max-width: 700px;
+            width: 95%;
+            text-align: left;
+            transition: all 0.3s ease;
+        }
+        .teacher-panel.collapsed {
+            display: none;
+        }
+        .panel-row {
+            margin-bottom: 8px;
+        }
+        .panel-row label {
+            font-weight: bold;
+            color: #333;
+            display: block;
+            margin-bottom: 2px;
+            font-size: 0.9rem;
+        }
+        .panel-row input {
+            width: 100%;
+            padding: 6px 10px;
+            font-size: 0.95rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        .btn-action {
+            font-size: 1rem;
+            padding: 8px 16px;
+            margin: 5px 5px 0 0;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+        }
+        .btn-update { background-color: #4ecdc4; }
+        .btn-update:hover { background-color: #45b7af; }
+        .btn-random { background-color: #ff6b6b; }
+        .btn-random:hover { background-color: #ff5252; }
+        
+        .secret-status {
+            font-size: 0.95rem;
+            color: #d35400;
+            margin-top: 8px;
+            font-weight: bold;
+        }
+
+        /* 固定兩列的網格配置 */
+        .grid-container {
+            display: grid;
+            gap: 14px;
+            width: 95%;
+            max-width: 960px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        .room-card {
+            background-color: white;
+            border: 4px solid #ffe66d;
+            border-radius: 16px;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            padding: 5px;
+            word-break: break-word;
+        }
+        .room-card:hover {
+            transform: translateY(-3px) scale(1.02);
+            background-color: #fff9e6;
+        }
+
+        /* 彈跳視窗 (Modal) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            z-index: 1000;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-box {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 450px;
+            width: 85%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transform: scale(0.8);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+        .modal-title {
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+        .modal-sub {
+            font-size: 1.3rem;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .btn-modal {
+            font-size: 1.1rem;
+            padding: 10px 24px;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            background-color: #4ecdc4;
+            color: white;
+        }
+    </style>
+<link rel="stylesheet" href="../css/game-layout.css">
+</head>
+<body>
+
+    <h1 id="mainTitle">-at, -an</h1>
+    <button class="panel-toggle-btn" onclick="togglePanel()">⚙️ 展開/收合設定面板</button>
+
+    <div class="teacher-panel" id="teacherPanel">
+        <div class="panel-row">
+            <label>1. 更改遊戲大標題（問題）：</label>
+            <input type="text" id="inputTitle" value="-at, -an">
+        </div>
+        <div class="panel-row">
+            <label>2. 答對時要顯示的句子：</label>
+            <input type="text" id="inputCorrectMsg" value="Bingo! You found it! 🎉">
+        </div>
+        <div class="panel-row">
+            <label>3. 輸入選項（以半形逗號隔開）：</label>
+            <input type="text" id="inputOptions" value="can, cat, man, rat, fan, bat, pan, hat">
+        </div>
+        <button class="btn-action btn-update" onclick="updateGame()">💾 套用新設定</button>
+        <button class="btn-action btn-random" onclick="randomHide()">🎲 隨機藏好目標 (學生閉眼!)</button>
+        
+        <div id="secretStatus" class="secret-status">狀態：請先點擊「套用」，再點擊「隨機藏好」開始遊戲！</div>
+    </div>
+
+    <div class="grid-container" id="cardContainer"></div>
+
+    <!-- 彈跳視窗 -->
+    <div class="modal-overlay" id="resultModal" onclick="closeModal()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div id="modalTitle" class="modal-title"></div>
+            <div id="modalSub" class="modal-sub"></div>
+            <button class="btn-modal" id="modalBtn" onclick="closeModal()">確認</button>
+        </div>
+    </div>
+
+    <script>
+        let currentOptions = [];
+        let secretTarget = "";
+        let isGameOver = false;
+        let autoCloseTimer = null;
+
+        window.onload = function() {
+            updateGame();
+        };
+
+        function togglePanel() {
+            const panel = document.getElementById("teacherPanel");
+            panel.classList.toggle("collapsed");
+        }
+
+        function updateGame() {
+            const newTitle = document.getElementById("inputTitle").value;
+            document.getElementById("mainTitle").innerText = newTitle;
+
+            const rawOptions = document.getElementById("inputOptions").value;
+            currentOptions = rawOptions.split(',').map(item => item.trim()).filter(item => item !== "");
+
+            const count = currentOptions.length;
+            if (count < 2) {
+                alert("請至少輸入 2 個以上的選項！");
+                return;
+            }
+
+            const container = document.getElementById("cardContainer");
+            container.innerHTML = "";
+
+            // 動態調整欄數：固定排成 2 橫列
+            let cols = Math.ceil(count / 2);
+            container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+            // 根據單字格數自動微調字體與高度
+            let fontSize = "1.5rem";
+            let cardHeight = "100px";
+            if (cols >= 6) {
+                fontSize = "1.15rem";
+                cardHeight = "80px";
+            } else if (cols === 4) {
+                fontSize = "1.4rem";
+                cardHeight = "95px";
+            }
+
+            currentOptions.forEach(opt => {
+                const card = document.createElement("div");
+                card.className = "room-card";
+                card.id = `card-${opt}`;
+                card.innerText = opt;
+                card.style.fontSize = fontSize;
+                card.style.height = cardHeight;
+                card.onclick = () => checkSelection(opt);
+                container.appendChild(card);
+            });
+
+            secretTarget = "";
+            isGameOver = false;
+            document.getElementById("secretStatus").innerHTML = "狀態：設定已更新！請點擊「🎲 隨機藏好目標」開始遊戲！";
+        }
+
+        function randomHide() {
+            if (currentOptions.length === 0) {
+                alert("請先設定選項！");
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * currentOptions.length);
+            secretTarget = currentOptions[randomIndex];
+            isGameOver = false;
+
+            currentOptions.forEach(opt => {
+                const card = document.getElementById(`card-${opt}`);
+                if (card) {
+                    card.style.opacity = '1';
+                    card.style.pointerEvents = 'auto';
+                    card.style.border = '4px solid #ffe66d';
+                }
+            });
+
+            document.getElementById("secretStatus").innerHTML = "🤫 狀態：目標已經藏好！(建議收合面板授課)";
+        }
+
+        function showModal(title, sub, isCorrect) {
+            clearTimeout(autoCloseTimer);
+            const modal = document.getElementById("resultModal");
+            const titleEl = document.getElementById("modalTitle");
+            const subEl = document.getElementById("modalSub");
+            const btnEl = document.getElementById("modalBtn");
+
+            titleEl.innerHTML = title;
+            titleEl.style.color = isCorrect ? "#2ecc71" : "#e74c3c";
+            subEl.innerHTML = sub;
+
+            if (isCorrect) {
+                btnEl.innerText = "再來一局 🎲";
+                btnEl.onclick = () => {
+                    closeModal();
+                    randomHide();
+                };
+            } else {
+                btnEl.innerText = "繼續猜 🔍";
+                btnEl.onclick = closeModal;
+                // 答錯 1.2 秒後自動關閉彈窗
+                autoCloseTimer = setTimeout(closeModal, 1200);
+            }
+
+            modal.classList.add("active");
+        }
+
+        function closeModal() {
+            clearTimeout(autoCloseTimer);
+            document.getElementById("resultModal").classList.remove("active");
+        }
+
+        function checkSelection(selectedOpt) {
+            if (secretTarget === "") {
+                alert("⚠️ 請老師先點擊「🎲 隨機藏好目標」喔！");
+                return;
+            }
+            if (isGameOver) {
+                alert("🎉 已經找到了！請點擊「隨機藏好目標」再來一局！");
+                return;
+            }
+
+            const customCorrectMsg = document.getElementById("inputCorrectMsg").value;
+            const selectedCard = document.getElementById(`card-${selectedOpt}`);
+
+            if (selectedOpt === secretTarget) {
+                isGameOver = true;
+                selectedCard.style.border = '4px solid #2ecc71';
+                showModal(customCorrectMsg, `Target: <strong>${selectedOpt}</strong>`, true);
+
+                currentOptions.forEach(opt => {
+                    const card = document.getElementById(`card-${opt}`);
+                    if (opt !== selectedOpt && card) {
+                        card.style.opacity = '0.3';
+                    }
+                });
+            } else {
+                selectedCard.style.opacity = '0.25';
+                selectedCard.style.pointerEvents = 'none';
+                showModal("Sorry! ❌", `Not <strong>${selectedOpt}</strong>`, false);
+            }
+        }
+    </script>
+<script>
+window.gameTeacherConfig={"id":"tap-and-guess","selector":"#teacherPanel"};</script><script src="../js/teacher-settings.js"></script></body>
+</html>

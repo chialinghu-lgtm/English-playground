@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kick it Out! 英語大逃殺 🎲 (課堂分組版)</title>
+  <link rel="stylesheet" href="../css/classroom.css">
+  <script src="../js/qrcode.min.js"></script>
+  <script src="../js/classroom-bar.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=M+PLUS+Rounded+1c:wght@500;800&display=swap');
+
+    :root {
+      --bg: #FFF9E6;
+      --card-bg: #FFFFFF;
+      --primary: #FF70A6;
+      --accent: #FF9770;
+      --yellow: #FFD670;
+      --teal: #70D6FF;
+      --green: #80E3A7;
+      --track-border: #634832;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: 'Fredoka One', 'M PLUS Rounded 1c', sans-serif;
+      background-color: var(--bg);
+      color: #4A4A4A;
+      margin: 0;
+      padding: 48px 12px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .main-container {
+      width: 100%;
+      max-width: 980px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 12px 18px;
+      box-shadow: 0 8px 0 #EAD7AF, 0 10px 16px rgba(0,0,0,0.06);
+      border: 3px solid var(--track-border);
+    }
+
+    h1 {
+      text-align: center;
+      color: #FF5A84;
+      margin: 0 0 10px 0;
+      font-size: 22px;
+    }
+
+    .form-group { margin-bottom: 10px; }
+    label { display: block; font-size: 13px; margin-bottom: 3px; color: #634832; font-weight: bold; }
+    input[type="text"], input[type="number"], select, textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 2px solid #EAD7AF;
+      border-radius: 10px;
+      font-size: 13px;
+      background: #FFFDF9;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .cute-btn {
+      background-color: var(--primary);
+      color: white;
+      border: 2.5px solid var(--track-border);
+      border-radius: 14px;
+      padding: 7px 16px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #D93B72;
+      transition: transform 0.1s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cute-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 #D93B72; }
+    .cute-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #D93B72; }
+    .cute-btn:disabled { background-color: #D3D3D3; border-color: #A9A9A9; box-shadow: 0 3px 0 #8E8E8E; cursor: not-allowed; transform: none; }
+
+    /* 正式命名：Kick it Out! 標題造型 */
+    .game-title-header {
+      text-align: center;
+      font-size: 22px;
+      color: #FF5A84;
+      margin: 0 0 6px 0;
+      text-shadow: 1.5px 1.5px 0px #FFE1EA;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: 1px;
+    }
+
+    /* 長方形 5x5 環形棋盤 */
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      grid-template-rows: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      width: 100%;
+      height: min(78vh, 620px);
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .grid-cell {
+      background: white;
+      border: 2.5px solid var(--track-border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px;
+      box-shadow: 0 3px 0 #E2CDAA;
+      position: relative;
+      min-height: 0;
+    }
+
+    .cell-info {
+      text-align: center;
+      line-height: 1.1;
+      width: 100%;
+    }
+    .cell-term-a {
+      color: #2C3E50;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cell-term-b {
+      color: #E67E22;
+      font-size: 11px;
+      font-weight: bold;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 中央控制看板 */
+    .center-panel {
+      grid-column: 2 / 5;
+      grid-row: 2 / 5;
+      background: #FFFDF5;
+      border: 2.5px dashed #E6C280;
+      border-radius: 16px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-evenly;
+      text-align: center;
+    }
+
+    .sentence-banner {
+      background: #E8F8F5;
+      border: 2px solid #2ECC71;
+      border-radius: 10px;
+      padding: 6px 8px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #16A085;
+      width: 100%;
+      line-height: 1.25;
+    }
+
+    /* 花片與棋子造型 */
+    .token-slot {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      min-height: 20px;
+    }
+
+    .token {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      border: 1.5px solid white;
+      box-shadow: 0 1.5px 3px rgba(0,0,0,0.2);
+      transition: all 0.2s;
+    }
+
+    .p0 { background: #FF70A6; }
+    .p1 { background: #70D6FF; }
+    .p2 { background: #FFD670; }
+    .p3 { background: #80E3A7; }
+
+    /* 先選目標：高亮提示 */
+    .token.can-pick {
+      cursor: pointer;
+      animation: pulsePick 0.7s infinite alternate;
+      border: 2px solid #E74C3C;
+    }
+
+    .token.is-selected {
+      transform: scale(1.3);
+      border: 2px solid #2ECC71 !important;
+      box-shadow: 0 0 6px #2ECC71;
+      animation: none;
+    }
+
+    @keyframes pulsePick {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.2); }
+    }
+
+    /* 彈窗樣式 */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .cute-modal {
+      background: white;
+      border: 3.5px solid var(--track-border);
+      border-radius: 22px;
+      padding: 20px;
+      text-align: center;
+      max-width: 380px;
+      width: 90%;
+      box-shadow: 0 10px 0 #EAD7AF;
+    }
+  </style>
+<link rel="stylesheet" href="../css/game-layout.css">
+</head>
+<body>
+
+<div class="main-container">
+
+  <!-- 後台設定區 -->
+  <div class="card" id="adminPanel">
+    <h1>⚙️ Kick it Out! 遊戲後台設定 ✏️</h1>
+
+    <div class="form-group">
+      <label>🗣️ 提問句型範本（使用 {A} 代表目標項目）：</label>
+      <input type="text" id="cfgQuestion" value="Where is the {A}?">
+    </div>
+
+    <div class="form-group">
+      <label>💬 回答句型範本（使用 {B} 代表對應答案）：</label>
+      <input type="text" id="cfgAnswer" value="It's {B}.">
+    </div>
+
+    <div class="form-group">
+      <label>📚 16 格題庫清單（A:B 格式，以逗號或換行隔開）：</label>
+      <textarea id="cfgItems" rows="3">bedroom:upstairs, bathroom:upstairs, living room:downstairs, dining room:downstairs, kitchen:downstairs, yard:downstairs, bedroom:upstairs, bathroom:downstairs, living room:downstairs, dining room:downstairs, kitchen:downstairs, yard:downstairs, bedroom:upstairs, bathroom:upstairs, living room:downstairs, kitchen:downstairs</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>👥 玩家人數：</label>
+      <select id="cfgPlayerCount">
+        <option value="4" selected>4 人 (每人 4 顆花片 - 剛好擺滿 16 格)</option>
+        <option value="3">3 人 (每人 5 顆花片 - 留 1 空格)</option>
+        <option value="2">2 人 (每人 8 顆花片 - 剛好擺滿 16 格)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>⏳ 遊戲限時 (分鐘)：</label>
+      <input type="number" id="cfgDuration" value="3" min="1" max="10">
+    </div>
+
+    <div style="text-align: center; margin-top: 10px;">
+      <button class="cute-btn" onclick="saveAdminAndStart()">🚀 儲存設定並開始 Kick it Out!</button>
+    </div>
+  </div>
+
+  <!-- 遊戲主畫面 -->
+  <div class="card" id="gamePanel" style="display: none;">
+    <div class="game-title-header">
+      <span>💥</span> Kick it Out! 英語大逃殺 <span>🎲</span>
+    </div>
+
+    <div class="board-grid" id="boardGrid">
+      
+      <!-- 中央控制面板 -->
+      <div class="center-panel">
+        <div style="display:flex; justify-content:space-between; width:100%; font-size:13px; font-weight:bold;">
+          <div>⏳ <span id="timerDisplay">03:00</span></div>
+          <div>輪到：<span id="turnLabel" style="font-size:14px;">🐱 玩家 1</span></div>
+        </div>
+
+        <div class="sentence-banner" id="sentenceBanner">
+          💬 問句範本載入中...<br>👉 答句範本載入中...
+        </div>
+
+        <!-- 初始擺子按鈕 -->
+        <div id="setupControls">
+          <button class="cute-btn" style="background:var(--yellow); color:#634832;" onclick="autoFillPiecesRandomly()">
+            🎲 一鍵隨機自動擺滿
+          </button>
+        </div>
+
+        <!-- 正式對戰操作區：先選目標 ➔ 後擲骰子 -->
+        <div id="playControls" style="display:none; flex-direction:column; align-items:center; gap:4px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div id="diceCube" style="font-size: 28px;">🎲</div>
+            <button class="cute-btn" id="rollBtn" onclick="onRollDice()" disabled>擲骰子 🎯</button>
+          </div>
+          <div id="actionHint" style="font-size: 12px; color: #E74C3C; font-weight: bold;">
+            👉 步驟 1：請先點選你要移動的一顆花片！
+          </div>
+        </div>
+
+        <div id="scoresDisplay" style="font-size: 11px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- 英語問答與踢子互動彈窗 -->
+<div class="modal-backdrop" id="quizModal">
+  <div class="cute-modal">
+    <div style="font-size: 32px;">📢</div>
+    <h3 style="margin: 4px 0; color:#634832;">全組一起問！</h3>
+    <p style="font-size: 15px; font-weight: bold; color: #16A085;" id="modalQuestionText"></p>
+    
+    <div style="background:#FFF1DB; border-radius:12px; padding:8px; margin:8px 0;">
+      <div style="font-size: 12px; color:#7F8C8D;">正確回答範本：</div>
+      <div style="font-size: 17px; font-weight: bold; color:#E67E22;" id="modalAnswerText"></div>
+    </div>
+    
+    <div style="display: flex; gap: 8px; justify-content: center; margin-top: 10px;">
+      <button class="cute-btn" style="background:var(--green); box-shadow:0 4px 0 #57B67D;" onclick="handleQuizResult(true)">
+        💥 Kick it Out! 答對並踢出
+      </button>
+      <button class="cute-btn" style="background:#E74C3C; box-shadow:0 4px 0 #C0392B;" onclick="handleQuizResult(false)">
+        ❌ 答錯/不會 (退回原位)
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 獲勝結算彈窗 -->
+<div class="modal-backdrop" id="winModal">
+  <div class="cute-modal" style="max-width: 400px;">
+    <div style="font-size: 50px;">🏆</div>
+    <h2 style="color:#FF5A84; margin: 4px 0;">Kick it Out 戰況結算！</h2>
+    <div id="winRankings" style="margin: 10px 0; font-size: 14px; text-align: left; background:#FFF9E6; padding:8px 12px; border-radius:12px;"></div>
+    <button class="cute-btn" onclick="location.reload()">🔄 回後台重新設定</button>
+  </div>
+</div>
+
+<script>
+  // 5x5 環形座標映射 (0 ~ 15 順時針)
+  const GRID_COORDS = [
+    { r: 1, c: 1 }, { r: 1, c: 2 }, { r: 1, c: 3 }, { r: 1, c: 4 }, { r: 1, c: 5 },
+    { r: 2, c: 5 }, { r: 3, c: 5 }, { r: 4, c: 5 },
+    { r: 5, c: 5 }, { r: 5, c: 4 }, { r: 5, c: 3 }, { r: 5, c: 2 }, { r: 5, c: 1 },
+    { r: 4, c: 1 }, { r: 3, c: 1 }, { r: 2, c: 1 }
+  ];
+
+  const PLAYERS = [
+    { name: '小貓咪', emoji: '🐱', class: 'p0' },
+    { name: '小狗狗', emoji: '🐶', class: 'p1' },
+    { name: '小兔子', emoji: '🐰', class: 'p2' },
+    { name: '小狐狸', emoji: '🦊', class: 'p3' }
+  ];
+  const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+  let boardItems = [];
+  let questionTemplate = "";
+  let answerTemplate = "";
+  let playerCount = 4;
+  let piecesPerPlayer = 4;
+  let pieces = [];
+  let currentTurn = 0;
+  let selectedPiece = null;
+  let preMovePos = 0;
+  let timerSeconds = 180;
+  let timerInterval = null;
+
+  // 1. 後台設定存檔與啟動
+  function saveAdminAndStart() {
+    questionTemplate = document.getElementById('cfgQuestion').value.trim();
+    answerTemplate = document.getElementById('cfgAnswer').value.trim();
+    playerCount = parseInt(document.getElementById('cfgPlayerCount').value);
+    timerSeconds = parseInt(document.getElementById('cfgDuration').value) * 60;
+
+    const rawEntries = document.getElementById('cfgItems').value.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+    boardItems = [];
+    for (let i = 0; i < 16; i++) {
+      const entry = rawEntries[i % rawEntries.length];
+      let tA = "Item";
+      let tB = "Value";
+
+      if (entry.includes(':')) {
+        const parts = entry.split(':');
+        tA = parts[0].trim();
+        tB = parts[1].trim();
+      } else {
+        tA = entry;
+        tB = "";
+      }
+      boardItems.push({ termA: tA, termB: tB });
+    }
+
+    document.getElementById('sentenceBanner').innerHTML = `
+      💬 ${questionTemplate.replace('{A}', '<span style="color:#E74C3C;">____</span>')}<br>
+      👉 ${answerTemplate.replace('{B}', '<span style="color:#E74C3C;">____</span>')}
+    `;
+
+    if (playerCount === 4) piecesPerPlayer = 4;
+    else if (playerCount === 3) piecesPerPlayer = 5;
+    else if (playerCount === 2) piecesPerPlayer = 8;
+
+    pieces = [];
+    let pIdCounter = 0;
+    for (let p = 0; p < playerCount; p++) {
+      for (let i = 0; i < piecesPerPlayer; i++) {
+        pieces.push({ id: pIdCounter++, playerId: p, pos: -1, active: true });
+      }
+    }
+
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('gamePanel').style.display = 'block';
+
+    renderBoardCells();
+    updateScoreBoard();
+  }
+
+  // 2. 渲染 16 格格子
+  function renderBoardCells() {
+    const grid = document.getElementById('boardGrid');
+    grid.querySelectorAll('.grid-cell').forEach(e => e.remove());
+
+    GRID_COORDS.forEach((coord, idx) => {
+      const cell = document.createElement('div');
+      cell.className = 'grid-cell';
+      cell.id = `cell-${idx}`;
+      cell.style.gridRow = coord.r;
+      cell.style.gridColumn = coord.c;
+
+      const item = boardItems[idx];
+      cell.innerHTML = `
+        <div class="cell-info">
+          <div class="cell-term-a" title="${item.termA}">${item.termA}</div>
+          <div class="cell-term-b" title="${item.termB}">${item.termB}</div>
+        </div>
+        <div class="token-slot" id="slot-${idx}"></div>
+      `;
+      grid.appendChild(cell);
+    });
+  }
+
+  // 3. 一鍵隨機自動擺滿
+  function autoFillPiecesRandomly() {
+    const availableSlots = Array.from({ length: 16 }, (_, i) => i);
+    for (let i = availableSlots.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [availableSlots[i], availableSlots[j]] = [availableSlots[j], availableSlots[i]];
+    }
+
+    pieces.forEach((piece, index) => {
+      if (index < availableSlots.length) {
+        piece.pos = availableSlots[index];
+      }
+    });
+
+    document.getElementById('setupControls').style.display = 'none';
+    document.getElementById('playControls').style.display = 'flex';
+
+    renderTokens();
+    updateScoreBoard();
+    startTimer();
+    startTurnSelectionPhase();
+  }
+
+  // 4. 先選目標物
+  function startTurnSelectionPhase() {
+    selectedPiece = null;
+    document.getElementById('rollBtn').disabled = true;
+    document.getElementById('actionHint').innerText = `👉 步驟 1：請點選 ${PLAYERS[currentTurn].name} 要移動的花片！`;
+    updateTurnUI();
+    renderTokens();
+  }
+
+  function renderTokens() {
+    document.querySelectorAll('.token-slot').forEach(slot => slot.innerHTML = '');
+
+    pieces.filter(p => p.active && p.pos !== -1).forEach(p => {
+      const slot = document.getElementById(`slot-${p.pos}`);
+      if (slot) {
+        const token = document.createElement('div');
+        token.className = `token ${PLAYERS[p.playerId].class}`;
+        token.innerText = PLAYERS[p.playerId].emoji;
+
+        if (p.playerId === currentTurn) {
+          token.classList.add('can-pick');
+          if (selectedPiece && selectedPiece.id === p.id) {
+            token.classList.add('is-selected');
+          }
+          token.onclick = () => selectPieceTarget(p);
+        }
+
+        slot.appendChild(token);
+      }
+    });
+  }
+
+  function selectPieceTarget(piece) {
+    selectedPiece = piece;
+    renderTokens();
+
+    document.getElementById('rollBtn').disabled = false;
+    document.getElementById('actionHint').innerText = `✅ 目標已鎖定！步驟 2：請點擊「擲骰子」前進！`;
+  }
+
+  // 5. 擲骰前進
+  function onRollDice() {
+    if (!selectedPiece) return;
+    const rollBtn = document.getElementById('rollBtn');
+    rollBtn.disabled = true;
+
+    const diceNum = Math.floor(Math.random() * 6) + 1;
+    document.getElementById('diceCube').innerText = DICE_FACES[diceNum - 1];
+
+    preMovePos = selectedPiece.pos;
+    const targetPos = (selectedPiece.pos + diceNum) % 16;
+    selectedPiece.pos = targetPos;
+
+    renderTokens();
+
+    setTimeout(() => {
+      openQuizModal(targetPos);
+    }, 380);
+  }
+
+  // 6. 提問彈窗
+  function openQuizModal(pos) {
+    const item = boardItems[pos];
+    const qText = questionTemplate.replace('{A}', item.termA);
+    const aText = answerTemplate.replace('{B}', item.termB);
+
+    document.getElementById('modalQuestionText').innerText = qText;
+    document.getElementById('modalAnswerText').innerText = aText;
+    document.getElementById('quizModal').style.display = 'flex';
+  }
+
+  // 7. Kick it Out 踢除判定
+  function handleQuizResult(isCorrect) {
+    document.getElementById('quizModal').style.display = 'none';
+
+    if (isCorrect) {
+      const targetPos = selectedPiece.pos;
+      let kickedCount = 0;
+
+      // 執行踢出判定：同格其餘棋子（不論敵我）全部永久淘汰
+      pieces.forEach(p => {
+        if (p.active && p.pos === targetPos && p.id !== selectedPiece.id) {
+          p.active = false;
+          kickedCount++;
+        }
+      });
+
+      if (kickedCount > 0) {
+        alert(`💥 Kick it Out! 答對了！該格共有 ${kickedCount} 顆花片被永久踢出遊戲版！`);
+      } else {
+        alert(`✨ 答對了！順利佔領該格！`);
+      }
+    } else {
+      alert(`❌ 答錯或不會回答，該花片退回出發格！`);
+      selectedPiece.pos = preMovePos;
+    }
+
+    renderTokens();
+    updateScoreBoard();
+    checkGameOver();
+    nextTurn();
+  }
+
+  function nextTurn() {
+    let attempts = 0;
+    do {
+      currentTurn = (currentTurn + 1) % playerCount;
+      attempts++;
+    } while (getPlayerActiveCount(currentTurn) === 0 && attempts < playerCount);
+
+    startTurnSelectionPhase();
+  }
+
+  function getPlayerActiveCount(pId) {
+    return pieces.filter(p => p.playerId === pId && p.active && p.pos !== -1).length;
+  }
+
+  function updateTurnUI() {
+    const p = PLAYERS[currentTurn];
+    const label = document.getElementById('turnLabel');
+    label.innerText = `${p.emoji} ${p.name}`;
+    label.style.color = p.class === 'p0' ? '#FF70A6' : p.class === 'p1' ? '#3498DB' : p.class === 'p2' ? '#E67E22' : '#2ECC71';
+  }
+
+  function updateScoreBoard() {
+    const scoresEl = document.getElementById('scoresDisplay');
+    scoresEl.innerHTML = '';
+    for (let i = 0; i < playerCount; i++) {
+      const count = getPlayerActiveCount(i);
+      scoresEl.innerHTML += `<div>${PLAYERS[i].emoji}: <b>${count}</b> 顆</div>`;
+    }
+  }
+
+  function startTimer() {
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      updateTimerDisplay();
+      if (timerSeconds <= 0) {
+        clearInterval(timerInterval);
+        endGame("時間到！結算花片存活數！");
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay() {
+    const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+    const s = String(timerSeconds % 60).padStart(2, '0');
+    document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+  }
+
+  function checkGameOver() {
+    const alivePlayers = [];
+    for (let i = 0; i < playerCount; i++) {
+      if (getPlayerActiveCount(i) > 0) alivePlayers.push(i);
+    }
+    if (alivePlayers.length <= 1) {
+      clearInterval(timerInterval);
+      endGame("場上已無其他競爭對手，大逃殺結束！");
+    }
+  }
+
+  function endGame(reason) {
+    const ranking = [];
+    for (let i = 0; i < playerCount; i++) {
+      ranking.push({ player: PLAYERS[i], count: getPlayerActiveCount(i) });
+    }
+    ranking.sort((a, b) => b.count - a.count);
+
+    let html = `<p><b>${reason}</b></p>`;
+    ranking.forEach((r, idx) => {
+      html += `<div>第 ${idx + 1} 名：${r.player.emoji} ${r.player.name}（剩餘 ${r.count} 顆花片）</div>`;
+    });
+
+    document.getElementById('winRankings').innerHTML = html;
+    document.getElementById('winModal').style.display = 'flex';
+  }
+</script>
+
+<script>
+window.gameTeacherConfig={"id":"kick-it-out","selector":"#adminPanel"};</script><script src="../js/teacher-settings.js"></script></body>
+</html>
