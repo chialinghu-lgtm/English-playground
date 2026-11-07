@@ -1,0 +1,221 @@
+/* ========================================================
+   Classroom Toolbar & Modal Styles (課堂專用懸浮工具列)
+   ======================================================== */
+.classroom-toolbar {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(26, 37, 48, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    border-radius: 30px;
+    padding: 5px 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.35);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+    color: #fff;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: all 0.25s ease;
+}
+
+.classroom-toolbar:hover {
+    background: rgba(26, 37, 48, 0.98);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+.classroom-group-badge {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border: none;
+    transition: transform 0.1s ease;
+}
+.classroom-group-badge:hover {
+    transform: scale(1.05);
+}
+.classroom-group-badge.team-blue {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+}
+.classroom-group-badge.team-red {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.classroom-btn {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: none;
+    border-radius: 18px;
+    padding: 4px 9px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+.classroom-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    transform: translateY(-1px);
+}
+.classroom-btn:active {
+    transform: translateY(1px);
+}
+
+/* 課堂 QR Code 彈跳視窗 */
+.classroom-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(5px);
+    z-index: 100000;
+    align-items: center;
+    justify-content: center;
+    animation: crFadeIn 0.2s ease forwards;
+}
+
+@keyframes crFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.classroom-modal-card {
+    background: #ffffff;
+    color: #2c3e50;
+    border-radius: 24px;
+    padding: 24px 28px;
+    max-width: 440px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    position: relative;
+    animation: crScaleUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes crScaleUp {
+    from { transform: scale(0.85); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.classroom-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    background: #f1f2f6;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
+    color: #7f8c8d;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.classroom-modal-close:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+.classroom-modal-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #2c3e50;
+    margin: 0 0 6px 0;
+}
+
+.classroom-modal-sub {
+    font-size: 13px;
+    color: #7f8c8d;
+    margin-bottom: 14px;
+}
+
+.classroom-group-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.group-chip {
+    padding: 5px 11px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 16px;
+    border: 1.5px solid #dcdde1;
+    background: #f8f9fa;
+    color: #2f3640;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.group-chip:hover {
+    border-color: #3498db;
+    background: #ebf5fb;
+}
+.group-chip.active {
+    background: #3498db;
+    color: white;
+    border-color: #2980b9;
+}
+
+.classroom-qr-box {
+    background: #f8f9fa;
+    padding: 14px;
+    border-radius: 16px;
+    border: 2px dashed #dcdde1;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+    min-width: 220px;
+    min-height: 220px;
+}
+
+.classroom-url-preview {
+    font-size: 11px;
+    color: #7f8c8d;
+    word-break: break-all;
+    background: #f1f2f6;
+    padding: 6px 10px;
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+/* 避免在極小螢幕或滿版遊戲中被遮蔽 */
+@media (max-width: 600px) {
+    .classroom-toolbar {
+        padding: 3px 8px;
+        gap: 5px;
+        top: 5px;
+        left: 5px;
+    }
+    .classroom-group-badge {
+        font-size: 11px;
+        padding: 3px 8px;
+    }
+    .classroom-btn {
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+}

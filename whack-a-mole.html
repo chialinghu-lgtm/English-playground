@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Whack-a-Word - 單字打地鼠 (課堂分組版)</title>
+    <link rel="stylesheet" href="../css/classroom.css">
+    <script src="../js/qrcode.min.js"></script>
+    <script src="../js/classroom-bar.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', '微軟正黑體', sans-serif;
+            background: linear-gradient(135deg, #74b9ff, #a29bfe);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px 10px 20px;
+            color: #2d3436;
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* 老師設定面板 */
+        .panel-toggle-btn {
+            background-color: #ff7675;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            font-size: 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s ease;
+        }
+
+        .panel-toggle-btn:active {
+            transform: scale(0.96);
+        }
+
+        .teacher-panel {
+            background: #ffffff;
+            color: #2d3436;
+            padding: 16px 20px;
+            border-radius: 12px;
+            width: 95%;
+            max-width: 600px;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .teacher-panel.collapsed {
+            display: none;
+        }
+
+        .panel-row {
+            margin-bottom: 10px;
+            text-align: left;
+        }
+
+        .panel-row label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.95rem;
+        }
+
+        .panel-row input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 2px solid #b2bec3;
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .panel-row input:focus {
+            border-color: #0984e3;
+        }
+
+        .btn-apply {
+            background-color: #00b894;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            margin-top: 5px;
+        }
+
+        /* 遊戲儀表板 */
+        .dashboard {
+            background: #ffffff;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1.35rem;
+            font-weight: bold;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+            margin-bottom: 18px;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .target-box {
+            color: #d63031;
+            font-size: 1.7rem;
+            text-decoration: underline;
+        }
+
+        /* 地鼠洞網格 */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 140px);
+            grid-gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .hole {
+            width: 140px;
+            height: 120px;
+            background: #6c5ce7;
+            border-radius: 50% / 35%;
+            position: relative;
+            overflow: hidden;
+            border: 6px solid #ffeaa7;
+            box-shadow: inset 0 12px 12px rgba(0,0,0,0.4);
+        }
+
+        .mole {
+            width: 110px;
+            height: 100px;
+            background: #e17055;
+            border-radius: 50px 50px 0 0;
+            position: absolute;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: bottom 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            border: 3px solid #d35400;
+        }
+
+        .mole.up {
+            bottom: 0;
+        }
+
+        .mole.hit-correct {
+            background-color: #00b894;
+            border-color: #009475;
+        }
+
+        .mole.hit-wrong {
+            background-color: #d63031;
+            border-color: #b71540;
+        }
+
+        /* 控制按鈕 */
+        .btn-control {
+            background: linear-gradient(135deg, #0984e3, #6c5ce7);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            transition: transform 0.1s ease;
+        }
+
+        .btn-control:active {
+            transform: scale(0.95);
+        }
+
+        /* 勝利彈出視窗 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            z-index: 100;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            color: #2d3436;
+            padding: 30px 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 420px;
+            width: 85%;
+            transform: scale(0.7);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 2.2rem;
+            color: #00b894;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .modal-sub {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #636e72;
+        }
+
+        .modal-btn {
+            background: #0984e3;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+<link rel="stylesheet" href="../css/game-layout.css">
+</head>
+<body>
+
+    <h1>🐹 Whack-a-Word! 🐹</h1>
+    <button class="panel-toggle-btn" onclick="togglePanel()">⚙️ 展開/收合設定面板</button>
+
+    <!-- 老師後台面板 -->
+    <div class="teacher-panel" id="teacherPanel">
+        <div class="panel-row">
+            <label>1. 單字清單（以逗號隔開）：</label>
+            <input type="text" id="inputWords" value="cat, hat, bat, rat, fan, pan">
+        </div>
+        <div class="panel-row">
+            <label>2. 地鼠探頭停留時間（秒，低年級建議 2~4，高年級建議 0.6~1.2）：</label>
+            <input type="number" id="inputStayTime" value="1.5" min="0.4" max="8" step="0.1">
+        </div>
+        <div class="panel-row">
+            <label>3. 獲勝目標分數（達到此分數勝利，設為 0 代表無限暢玩）：</label>
+            <input type="number" id="inputGoalScore" value="50" min="0" step="10">
+        </div>
+        <div class="panel-row">
+            <label>4. 答錯扣幾分（設為 0 則不懲罰）：</label>
+            <input type="number" id="inputPenalty" value="5" min="0" step="1">
+        </div>
+        <button class="btn-apply" onclick="applySettings()">💾 套用設定並重新開始</button>
+    </div>
+
+    <!-- 遊戲資訊 -->
+    <div class="dashboard">
+        <div>目標單字: <span id="targetWord" class="target-box">---</span></div>
+        <div>得分: <span id="scoreDisplay">0</span> <span id="goalText" style="font-size: 0.9rem; color: #636e72;">/ 50</span></div>
+    </div>
+
+    <!-- 6 個地洞 -->
+    <div class="grid-container">
+        <div class="hole"><div class="mole" id="mole0" onclick="hitMole(0)"></div></div>
+        <div class="hole"><div class="mole" id="mole1" onclick="hitMole(1)"></div></div>
+        <div class="hole"><div class="mole" id="mole2" onclick="hitMole(2)"></div></div>
+        <div class="hole"><div class="mole" id="mole3" onclick="hitMole(3)"></div></div>
+        <div class="hole"><div class="mole" id="mole4" onclick="hitMole(4)"></div></div>
+        <div class="hole"><div class="mole" id="mole5" onclick="hitMole(5)"></div></div>
+    </div>
+
+    <button class="btn-control" id="btnPlay" onclick="toggleGameState()">▶️ 開始遊戲</button>
+
+    <!-- 勝利視窗 -->
+    <div class="modal-overlay" id="winModal" onclick="closeModal()">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div class="modal-title">🏆 獲勝了！ 🏆</div>
+            <div class="modal-sub" id="modalSubText">太厲害了！成功達到目標分數！</div>
+            <button class="modal-btn" onclick="closeModal()">再挑戰一次 🚀</button>
+        </div>
+    </div>
+
+    <script>
+        /* ================= 遊戲核心變數 ================= */
+        let words = ["cat", "hat", "bat", "rat", "fan", "pan"];
+        let stayTime = 1.5;
+        let goalScore = 50;
+        let penalty = 5;
+
+        let score = 0;
+        let isRunning = false;
+        let targetWord = "";
+        let currentHole = -1;
+        let moleTimer = null;
+        let nextMoleTimer = null;
+
+        /* ================= Web Audio API 原生音效 ================= */
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playCorrectSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(523.25, now);
+            osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.15); // C5 -> G5
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        }
+
+        function playWrongSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(220, now);
+            osc.frequency.linearRampToValueAtTime(140, now + 0.2);
+            gain.gain.setValueAtTime(0.18, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        }
+
+        function playWinFanfare() {
+            if (!audioCtx) return;
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            notes.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = "triangle";
+                osc.frequency.value = freq;
+                const startTime = audioCtx.currentTime + idx * 0.12;
+                gain.gain.setValueAtTime(0.2, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + 0.4);
+            });
+        }
+
+        /* ================= 老師面板管理 ================= */
+        function togglePanel() {
+            document.getElementById('teacherPanel').classList.toggle('collapsed');
+        }
+
+        function applySettings(silent = false) {
+            const rawWords = document.getElementById('inputWords').value;
+            const parsed = rawWords.split(',').map(w => w.trim()).filter(w => w !== "");
+            if (parsed.length < 2) {
+                alert("請至少輸入 2 個單字！");
+                return;
+            }
+            words = parsed;
+
+            const timeInput = parseFloat(document.getElementById('inputStayTime').value);
+            stayTime = isNaN(timeInput) || timeInput < 0.4 ? 1.5 : timeInput;
+
+            const goalInput = parseInt(document.getElementById('inputGoalScore').value);
+            goalScore = isNaN(goalInput) || goalInput < 0 ? 0 : goalInput;
+
+            const penaltyInput = parseInt(document.getElementById('inputPenalty').value);
+            penalty = isNaN(penaltyInput) || penaltyInput < 0 ? 0 : penaltyInput;
+
+            document.getElementById('goalText').innerText = goalScore > 0 ? `/ ${goalScore}` : `(無限制)`;
+
+            stopGame();
+            document.getElementById('btnPlay').innerText = "▶️ 開始遊戲";
+            score = 0;
+            document.getElementById('scoreDisplay').innerText = score;
+            if (!silent) alert("💾 設定已更新！點擊「開始遊戲」即可開跑！");
+        }
+
+        /* ================= 遊戲運行邏輯 ================= */
+        function toggleGameState() {
+            initAudio();
+            const btn = document.getElementById('btnPlay');
+
+            if (!isRunning) {
+                isRunning = true;
+                btn.innerText = "⏹️ 暫停遊戲";
+                score = 0;
+                document.getElementById('scoreDisplay').innerText = score;
+                pickNewTarget();
+                scheduleNextMole(400);
+            } else {
+                stopGame();
+                btn.innerText = "▶️ 繼續遊戲";
+            }
+        }
+
+        function stopGame() {
+            isRunning = false;
+            clearTimeout(moleTimer);
+            clearTimeout(nextMoleTimer);
+            hideCurrentMole();
+        }
+
+        function pickNewTarget() {
+            targetWord = words[Math.floor(Math.random() * words.length)];
+            document.getElementById('targetWord').innerText = targetWord;
+        }
+
+        function scheduleNextMole(delay) {
+            if (!isRunning) return;
+            nextMoleTimer = setTimeout(popMole, delay);
+        }
+
+        function popMole() {
+            if (!isRunning) return;
+
+            hideCurrentMole();
+
+            let newHole;
+            do {
+                newHole = Math.floor(Math.random() * 6);
+            } while (newHole === currentHole);
+            currentHole = newHole;
+
+            const mole = document.getElementById(`mole${currentHole}`);
+
+            // 55% 出現正確目標單字
+            const isTarget = Math.random() < 0.55;
+            const chosenWord = isTarget ? targetWord : words[Math.floor(Math.random() * words.length)];
+
+            mole.innerText = chosenWord;
+            mole.dataset.word = chosenWord;
+            mole.className = "mole up";
+
+            moleTimer = setTimeout(() => {
+                hideCurrentMole();
+                scheduleNextMole(stayTime < 1.0 ? 300 : 500); // 高速模式縮小地鼠探頭間隔
+            }, stayTime * 1000);
+        }
+
+        function hideCurrentMole() {
+            if (currentHole !== -1) {
+                const mole = document.getElementById(`mole${currentHole}`);
+                mole.classList.remove('up');
+            }
+        }
+
+        function hitMole(index) {
+            if (!isRunning || index !== currentHole) return;
+            const mole = document.getElementById(`mole${index}`);
+            if (!mole.classList.contains('up')) return;
+
+            clearTimeout(moleTimer);
+
+            if (mole.dataset.word === targetWord) {
+                // 答對加 10 分
+                score += 10;
+                mole.classList.add('hit-correct');
+                playCorrectSound();
+                document.getElementById('scoreDisplay').innerText = score;
+
+                // 判斷是否達成獲勝分數
+                if (goalScore > 0 && score >= goalScore) {
+                    triggerWin();
+                    return;
+                }
+
+                setTimeout(() => {
+                    hideCurrentMole();
+                    pickNewTarget();
+                    scheduleNextMole(stayTime < 1.0 ? 300 : 600);
+                }, 200);
+            } else {
+                // 答錯扣分（不低於 0 分）
+                score = Math.max(0, score - penalty);
+                mole.classList.add('hit-wrong');
+                playWrongSound();
+                document.getElementById('scoreDisplay').innerText = score;
+
+                setTimeout(() => {
+                    hideCurrentMole();
+                    scheduleNextMole(stayTime < 1.0 ? 300 : 500);
+                }, 300);
+            }
+        }
+
+        /* 獲勝結算 */
+        function triggerWin() {
+            stopGame();
+            playWinFanfare();
+            document.getElementById('modalSubText').innerHTML = `恭喜獲得 <strong>${score}</strong> 分！順利通關！`;
+            document.getElementById('winModal').classList.add('active');
+            document.getElementById('btnPlay').innerText = "▶️ 重新開始";
+        }
+
+        function closeModal() {
+            document.getElementById('winModal').classList.remove('active');
+        }
+    </script>
+<script>
+window.gameTeacherConfig={"id":"whack-a-mole","selector":"#teacherPanel"};</script><script src="../js/teacher-settings.js"></script></body>
+</html>
